@@ -19,6 +19,7 @@
 
 package com.sk89q.worldedit.command.tool;
 
+import com.boydti.fawe.config.BBC;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.LocalConfiguration;
 import com.sk89q.worldedit.LocalSession;
@@ -48,25 +49,25 @@ public class TreePlanter implements BlockTool {
     @Override
     public boolean actPrimary(Platform server, LocalConfiguration config, Player player, LocalSession session, Location clicked) {
 
-        EditSession editSession = session.createEditSession(player);
+        try (EditSession editSession = session.createEditSession(player)) {
+            try {
+                boolean successful = false;
 
-        try {
-            boolean successful = false;
-            
-            for (int i = 0; i < 10; i++) {
-                if (treeType.generate(editSession, clicked.toVector().add(0, 1, 0))) {
-                    successful = true;
-                    break;
+                for (int i = 0; i < 10; i++) {
+                    if (treeType.generate(editSession, clicked.add(0, 1, 0).toBlockPoint())) {
+                        successful = true;
+                        break;
+                    }
                 }
+
+                if (!successful) {
+                    BBC.TOOL_TREE_ERROR_BLOCK.send(player);
+                }
+            } catch (MaxChangedBlocksException e) {
+                BBC.WORLDEDIT_CANCEL_REASON_MAX_CHANGES.send(player);
+            } finally {
+                session.remember(editSession);
             }
-            
-            if (!successful) {
-                player.printError("A tree can't go there.");
-            }
-        } catch (MaxChangedBlocksException e) {
-            player.printError("Max. blocks changed reached.");
-        } finally {
-            session.remember(editSession);
         }
 
         return true;

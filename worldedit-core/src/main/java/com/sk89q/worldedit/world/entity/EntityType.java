@@ -19,20 +19,61 @@
 
 package com.sk89q.worldedit.world.entity;
 
+import com.sk89q.worldedit.registry.RegistryItem;
 import com.sk89q.worldedit.registry.NamespacedRegistry;
 
-public interface EntityType {
-    String getId();
+public class EntityType implements RegistryItem {
+
+    public static final NamespacedRegistry<EntityType> REGISTRY = new NamespacedRegistry<>("entity type");
+
+    private String id;
+
+    public EntityType(String id) {
+        // If it has no namespace, assume minecraft.
+        if (!id.contains(":")) {
+            id = "minecraft:" + id;
+        }
+        this.id = id;
+    }
+
+    public String getId() {
+        return this.id;
+    }
+
+    private int internalId;
+
+    @Override
+    public void setInternalId(int internalId) {
+        this.internalId = internalId;
+    }
+
+    @Override
+    public int getInternalId() {
+        return internalId;
+    }
 
     /**
      * Gets the name of this item, or the ID if the name cannot be found.
      *
      * @return The name, or ID
      */
-    default String getName() {
+    public String getName() {
         return getId();
     }
 
-    @Deprecated
-    public int getInternalId();
+    @Override
+    public String toString() {
+        return getId();
+    }
+
+    @Override
+    public int hashCode() {
+        return this.id.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof EntityType && this.id.equals(((EntityType) obj).id);
+    }
+
 }

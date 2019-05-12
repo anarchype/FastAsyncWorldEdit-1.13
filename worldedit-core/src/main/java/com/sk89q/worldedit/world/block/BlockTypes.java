@@ -28,26 +28,29 @@ import com.boydti.fawe.util.ReflectionUtils;
 import com.boydti.fawe.util.StringMan;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
-import com.sk89q.worldedit.blocks.BlockMaterial;
 import com.sk89q.worldedit.extension.input.InputParseException;
 import com.sk89q.worldedit.extension.platform.Capability;
 import com.sk89q.worldedit.extent.Extent;
 import com.sk89q.worldedit.function.mask.Mask;
 import com.sk89q.worldedit.function.mask.SingleBlockTypeMask;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.registry.state.AbstractProperty;
 import com.sk89q.worldedit.registry.state.Property;
 import com.sk89q.worldedit.registry.state.PropertyKey;
+import com.sk89q.worldedit.util.Direction;
 import com.sk89q.worldedit.world.item.ItemType;
 import com.sk89q.worldedit.world.item.ItemTypes;
+import com.sk89q.worldedit.world.registry.BlockMaterial;
 import com.sk89q.worldedit.world.registry.BundledBlockData;
 import com.sk89q.worldedit.world.registry.LegacyMapper;
 import it.unimi.dsi.fastutil.ints.IntCollections;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Field;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -56,633 +59,626 @@ import java.util.stream.Stream;
 /**
  * Stores a list of common Block String IDs.
  */
-public enum BlockTypes implements BlockType {
-    /*
-     -----------------------------------------------------
-        Replaced at runtime by the block registry
-     -----------------------------------------------------
-     */
-    __RESERVED__,
-    ACACIA_BUTTON,
-    ACACIA_DOOR,
-    ACACIA_FENCE,
-    ACACIA_FENCE_GATE,
-    ACACIA_LEAVES,
-    ACACIA_LOG,
-    ACACIA_PLANKS,
-    ACACIA_PRESSURE_PLATE,
-    ACACIA_SAPLING,
-    ACACIA_SLAB,
-    ACACIA_STAIRS,
-    ACACIA_TRAPDOOR,
-    ACACIA_WOOD,
-    ACTIVATOR_RAIL,
-    AIR,
-    ALLIUM,
-    ANDESITE,
-    ANVIL,
-    ATTACHED_MELON_STEM,
-    ATTACHED_PUMPKIN_STEM,
-    AZURE_BLUET,
-    BARRIER,
-    BEACON,
-    BEDROCK,
-    BEETROOTS,
-    BIRCH_BUTTON,
-    BIRCH_DOOR,
-    BIRCH_FENCE,
-    BIRCH_FENCE_GATE,
-    BIRCH_LEAVES,
-    BIRCH_LOG,
-    BIRCH_PLANKS,
-    BIRCH_PRESSURE_PLATE,
-    BIRCH_SAPLING,
-    BIRCH_SLAB,
-    BIRCH_STAIRS,
-    BIRCH_TRAPDOOR,
-    BIRCH_WOOD,
-    BLACK_BANNER,
-    BLACK_BED,
-    BLACK_CARPET,
-    BLACK_CONCRETE,
-    BLACK_CONCRETE_POWDER,
-    BLACK_GLAZED_TERRACOTTA,
-    BLACK_SHULKER_BOX,
-    BLACK_STAINED_GLASS,
-    BLACK_STAINED_GLASS_PANE,
-    BLACK_TERRACOTTA,
-    BLACK_WALL_BANNER,
-    BLACK_WOOL,
-    BLUE_BANNER,
-    BLUE_BED,
-    BLUE_CARPET,
-    BLUE_CONCRETE,
-    BLUE_CONCRETE_POWDER,
-    BLUE_GLAZED_TERRACOTTA,
-    BLUE_ICE,
-    BLUE_ORCHID,
-    BLUE_SHULKER_BOX,
-    BLUE_STAINED_GLASS,
-    BLUE_STAINED_GLASS_PANE,
-    BLUE_TERRACOTTA,
-    BLUE_WALL_BANNER,
-    BLUE_WOOL,
-    BONE_BLOCK,
-    BOOKSHELF,
-    BRAIN_CORAL,
-    BRAIN_CORAL_BLOCK,
-    BRAIN_CORAL_FAN,
-    BRAIN_CORAL_WALL_FAN,
-    BREWING_STAND,
-    BRICK_SLAB,
-    BRICK_STAIRS,
-    BRICKS,
-    BROWN_BANNER,
-    BROWN_BED,
-    BROWN_CARPET,
-    BROWN_CONCRETE,
-    BROWN_CONCRETE_POWDER,
-    BROWN_GLAZED_TERRACOTTA,
-    BROWN_MUSHROOM,
-    BROWN_MUSHROOM_BLOCK,
-    BROWN_SHULKER_BOX,
-    BROWN_STAINED_GLASS,
-    BROWN_STAINED_GLASS_PANE,
-    BROWN_TERRACOTTA,
-    BROWN_WALL_BANNER,
-    BROWN_WOOL,
-    BUBBLE_COLUMN,
-    BUBBLE_CORAL,
-    BUBBLE_CORAL_BLOCK,
-    BUBBLE_CORAL_FAN,
-    BUBBLE_CORAL_WALL_FAN,
-    CACTUS,
-    CAKE,
-    CARROTS,
-    CARVED_PUMPKIN,
-    CAULDRON,
-    CAVE_AIR,
-    CHAIN_COMMAND_BLOCK,
-    CHEST,
-    CHIPPED_ANVIL,
-    CHISELED_QUARTZ_BLOCK,
-    CHISELED_RED_SANDSTONE,
-    CHISELED_SANDSTONE,
-    CHISELED_STONE_BRICKS,
-    CHORUS_FLOWER,
-    CHORUS_PLANT,
-    CLAY,
-    COAL_BLOCK,
-    COAL_ORE,
-    COARSE_DIRT,
-    COBBLESTONE,
-    COBBLESTONE_SLAB,
-    COBBLESTONE_STAIRS,
-    COBBLESTONE_WALL,
-    COBWEB,
-    COCOA,
-    COMMAND_BLOCK,
-    COMPARATOR,
-    CONDUIT,
-    CRACKED_STONE_BRICKS,
-    CRAFTING_TABLE,
-    CREEPER_HEAD,
-    CREEPER_WALL_HEAD,
-    CUT_RED_SANDSTONE,
-    CUT_SANDSTONE,
-    CYAN_BANNER,
-    CYAN_BED,
-    CYAN_CARPET,
-    CYAN_CONCRETE,
-    CYAN_CONCRETE_POWDER,
-    CYAN_GLAZED_TERRACOTTA,
-    CYAN_SHULKER_BOX,
-    CYAN_STAINED_GLASS,
-    CYAN_STAINED_GLASS_PANE,
-    CYAN_TERRACOTTA,
-    CYAN_WALL_BANNER,
-    CYAN_WOOL,
-    DAMAGED_ANVIL,
-    DANDELION,
-    DARK_OAK_BUTTON,
-    DARK_OAK_DOOR,
-    DARK_OAK_FENCE,
-    DARK_OAK_FENCE_GATE,
-    DARK_OAK_LEAVES,
-    DARK_OAK_LOG,
-    DARK_OAK_PLANKS,
-    DARK_OAK_PRESSURE_PLATE,
-    DARK_OAK_SAPLING,
-    DARK_OAK_SLAB,
-    DARK_OAK_STAIRS,
-    DARK_OAK_TRAPDOOR,
-    DARK_OAK_WOOD,
-    DARK_PRISMARINE,
-    DARK_PRISMARINE_SLAB,
-    DARK_PRISMARINE_STAIRS,
-    DAYLIGHT_DETECTOR,
-    DEAD_BRAIN_CORAL,
-    DEAD_BRAIN_CORAL_BLOCK,
-    DEAD_BRAIN_CORAL_FAN,
-    DEAD_BRAIN_CORAL_WALL_FAN,
-    DEAD_BUBBLE_CORAL,
-    DEAD_BUBBLE_CORAL_BLOCK,
-    DEAD_BUBBLE_CORAL_FAN,
-    DEAD_BUBBLE_CORAL_WALL_FAN,
-    DEAD_BUSH,
-    DEAD_FIRE_CORAL,
-    DEAD_FIRE_CORAL_BLOCK,
-    DEAD_FIRE_CORAL_FAN,
-    DEAD_FIRE_CORAL_WALL_FAN,
-    DEAD_HORN_CORAL,
-    DEAD_HORN_CORAL_BLOCK,
-    DEAD_HORN_CORAL_FAN,
-    DEAD_HORN_CORAL_WALL_FAN,
-    DEAD_TUBE_CORAL,
-    DEAD_TUBE_CORAL_BLOCK,
-    DEAD_TUBE_CORAL_FAN,
-    DEAD_TUBE_CORAL_WALL_FAN,
-    DETECTOR_RAIL,
-    DIAMOND_BLOCK,
-    DIAMOND_ORE,
-    DIORITE,
-    DIRT,
-    DISPENSER,
-    DRAGON_EGG,
-    DRAGON_HEAD,
-    DRAGON_WALL_HEAD,
-    DRIED_KELP_BLOCK,
-    DROPPER,
-    EMERALD_BLOCK,
-    EMERALD_ORE,
-    ENCHANTING_TABLE,
-    END_GATEWAY,
-    END_PORTAL,
-    END_PORTAL_FRAME,
-    END_ROD,
-    END_STONE,
-    END_STONE_BRICKS,
-    ENDER_CHEST,
-    FARMLAND,
-    FERN,
-    FIRE,
-    FIRE_CORAL,
-    FIRE_CORAL_BLOCK,
-    FIRE_CORAL_FAN,
-    FIRE_CORAL_WALL_FAN,
-    FLOWER_POT,
-    FROSTED_ICE,
-    FURNACE,
-    GLASS,
-    GLASS_PANE,
-    GLOWSTONE,
-    GOLD_BLOCK,
-    GOLD_ORE,
-    GRANITE,
-    GRASS,
-    GRASS_BLOCK,
-    GRASS_PATH,
-    GRAVEL,
-    GRAY_BANNER,
-    GRAY_BED,
-    GRAY_CARPET,
-    GRAY_CONCRETE,
-    GRAY_CONCRETE_POWDER,
-    GRAY_GLAZED_TERRACOTTA,
-    GRAY_SHULKER_BOX,
-    GRAY_STAINED_GLASS,
-    GRAY_STAINED_GLASS_PANE,
-    GRAY_TERRACOTTA,
-    GRAY_WALL_BANNER,
-    GRAY_WOOL,
-    GREEN_BANNER,
-    GREEN_BED,
-    GREEN_CARPET,
-    GREEN_CONCRETE,
-    GREEN_CONCRETE_POWDER,
-    GREEN_GLAZED_TERRACOTTA,
-    GREEN_SHULKER_BOX,
-    GREEN_STAINED_GLASS,
-    GREEN_STAINED_GLASS_PANE,
-    GREEN_TERRACOTTA,
-    GREEN_WALL_BANNER,
-    GREEN_WOOL,
-    HAY_BLOCK,
-    HEAVY_WEIGHTED_PRESSURE_PLATE,
-    HOPPER,
-    HORN_CORAL,
-    HORN_CORAL_BLOCK,
-    HORN_CORAL_FAN,
-    HORN_CORAL_WALL_FAN,
-    ICE,
-    INFESTED_CHISELED_STONE_BRICKS,
-    INFESTED_COBBLESTONE,
-    INFESTED_CRACKED_STONE_BRICKS,
-    INFESTED_MOSSY_STONE_BRICKS,
-    INFESTED_STONE,
-    INFESTED_STONE_BRICKS,
-    IRON_BARS,
-    IRON_BLOCK,
-    IRON_DOOR,
-    IRON_ORE,
-    IRON_TRAPDOOR,
-    JACK_O_LANTERN,
-    JUKEBOX,
-    JUNGLE_BUTTON,
-    JUNGLE_DOOR,
-    JUNGLE_FENCE,
-    JUNGLE_FENCE_GATE,
-    JUNGLE_LEAVES,
-    JUNGLE_LOG,
-    JUNGLE_PLANKS,
-    JUNGLE_PRESSURE_PLATE,
-    JUNGLE_SAPLING,
-    JUNGLE_SLAB,
-    JUNGLE_STAIRS,
-    JUNGLE_TRAPDOOR,
-    JUNGLE_WOOD,
-    KELP,
-    KELP_PLANT,
-    LADDER,
-    LAPIS_BLOCK,
-    LAPIS_ORE,
-    LARGE_FERN,
-    LAVA,
-    LEVER,
-    LIGHT_BLUE_BANNER,
-    LIGHT_BLUE_BED,
-    LIGHT_BLUE_CARPET,
-    LIGHT_BLUE_CONCRETE,
-    LIGHT_BLUE_CONCRETE_POWDER,
-    LIGHT_BLUE_GLAZED_TERRACOTTA,
-    LIGHT_BLUE_SHULKER_BOX,
-    LIGHT_BLUE_STAINED_GLASS,
-    LIGHT_BLUE_STAINED_GLASS_PANE,
-    LIGHT_BLUE_TERRACOTTA,
-    LIGHT_BLUE_WALL_BANNER,
-    LIGHT_BLUE_WOOL,
-    LIGHT_GRAY_BANNER,
-    LIGHT_GRAY_BED,
-    LIGHT_GRAY_CARPET,
-    LIGHT_GRAY_CONCRETE,
-    LIGHT_GRAY_CONCRETE_POWDER,
-    LIGHT_GRAY_GLAZED_TERRACOTTA,
-    LIGHT_GRAY_SHULKER_BOX,
-    LIGHT_GRAY_STAINED_GLASS,
-    LIGHT_GRAY_STAINED_GLASS_PANE,
-    LIGHT_GRAY_TERRACOTTA,
-    LIGHT_GRAY_WALL_BANNER,
-    LIGHT_GRAY_WOOL,
-    LIGHT_WEIGHTED_PRESSURE_PLATE,
-    LILAC,
-    LILY_PAD,
-    LIME_BANNER,
-    LIME_BED,
-    LIME_CARPET,
-    LIME_CONCRETE,
-    LIME_CONCRETE_POWDER,
-    LIME_GLAZED_TERRACOTTA,
-    LIME_SHULKER_BOX,
-    LIME_STAINED_GLASS,
-    LIME_STAINED_GLASS_PANE,
-    LIME_TERRACOTTA,
-    LIME_WALL_BANNER,
-    LIME_WOOL,
-    MAGENTA_BANNER,
-    MAGENTA_BED,
-    MAGENTA_CARPET,
-    MAGENTA_CONCRETE,
-    MAGENTA_CONCRETE_POWDER,
-    MAGENTA_GLAZED_TERRACOTTA,
-    MAGENTA_SHULKER_BOX,
-    MAGENTA_STAINED_GLASS,
-    MAGENTA_STAINED_GLASS_PANE,
-    MAGENTA_TERRACOTTA,
-    MAGENTA_WALL_BANNER,
-    MAGENTA_WOOL,
-    MAGMA_BLOCK,
-    MELON,
-    MELON_STEM,
-    MOSSY_COBBLESTONE,
-    MOSSY_COBBLESTONE_WALL,
-    MOSSY_STONE_BRICKS,
-    MOVING_PISTON,
-    MUSHROOM_STEM,
-    MYCELIUM,
-    NETHER_BRICK_FENCE,
-    NETHER_BRICK_SLAB,
-    NETHER_BRICK_STAIRS,
-    NETHER_BRICKS,
-    NETHER_PORTAL,
-    NETHER_QUARTZ_ORE,
-    NETHER_WART,
-    NETHER_WART_BLOCK,
-    NETHERRACK,
-    NOTE_BLOCK,
-    OAK_BUTTON,
-    OAK_DOOR,
-    OAK_FENCE,
-    OAK_FENCE_GATE,
-    OAK_LEAVES,
-    OAK_LOG,
-    OAK_PLANKS,
-    OAK_PRESSURE_PLATE,
-    OAK_SAPLING,
-    OAK_SLAB,
-    OAK_STAIRS,
-    OAK_TRAPDOOR,
-    OAK_WOOD,
-    OBSERVER,
-    OBSIDIAN,
-    ORANGE_BANNER,
-    ORANGE_BED,
-    ORANGE_CARPET,
-    ORANGE_CONCRETE,
-    ORANGE_CONCRETE_POWDER,
-    ORANGE_GLAZED_TERRACOTTA,
-    ORANGE_SHULKER_BOX,
-    ORANGE_STAINED_GLASS,
-    ORANGE_STAINED_GLASS_PANE,
-    ORANGE_TERRACOTTA,
-    ORANGE_TULIP,
-    ORANGE_WALL_BANNER,
-    ORANGE_WOOL,
-    OXEYE_DAISY,
-    PACKED_ICE,
-    PEONY,
-    PETRIFIED_OAK_SLAB,
-    PINK_BANNER,
-    PINK_BED,
-    PINK_CARPET,
-    PINK_CONCRETE,
-    PINK_CONCRETE_POWDER,
-    PINK_GLAZED_TERRACOTTA,
-    PINK_SHULKER_BOX,
-    PINK_STAINED_GLASS,
-    PINK_STAINED_GLASS_PANE,
-    PINK_TERRACOTTA,
-    PINK_TULIP,
-    PINK_WALL_BANNER,
-    PINK_WOOL,
-    PISTON,
-    PISTON_HEAD,
-    PLAYER_HEAD,
-    PLAYER_WALL_HEAD,
-    PODZOL,
-    POLISHED_ANDESITE,
-    POLISHED_DIORITE,
-    POLISHED_GRANITE,
-    POPPY,
-    POTATOES,
-    POTTED_ACACIA_SAPLING,
-    POTTED_ALLIUM,
-    POTTED_AZURE_BLUET,
-    POTTED_BIRCH_SAPLING,
-    POTTED_BLUE_ORCHID,
-    POTTED_BROWN_MUSHROOM,
-    POTTED_CACTUS,
-    POTTED_DANDELION,
-    POTTED_DARK_OAK_SAPLING,
-    POTTED_DEAD_BUSH,
-    POTTED_FERN,
-    POTTED_JUNGLE_SAPLING,
-    POTTED_OAK_SAPLING,
-    POTTED_ORANGE_TULIP,
-    POTTED_OXEYE_DAISY,
-    POTTED_PINK_TULIP,
-    POTTED_POPPY,
-    POTTED_RED_MUSHROOM,
-    POTTED_RED_TULIP,
-    POTTED_SPRUCE_SAPLING,
-    POTTED_WHITE_TULIP,
-    POWERED_RAIL,
-    PRISMARINE,
-    PRISMARINE_BRICK_SLAB,
-    PRISMARINE_BRICK_STAIRS,
-    PRISMARINE_BRICKS,
-    PRISMARINE_SLAB,
-    PRISMARINE_STAIRS,
-    PUMPKIN,
-    PUMPKIN_STEM,
-    PURPLE_BANNER,
-    PURPLE_BED,
-    PURPLE_CARPET,
-    PURPLE_CONCRETE,
-    PURPLE_CONCRETE_POWDER,
-    PURPLE_GLAZED_TERRACOTTA,
-    PURPLE_SHULKER_BOX,
-    PURPLE_STAINED_GLASS,
-    PURPLE_STAINED_GLASS_PANE,
-    PURPLE_TERRACOTTA,
-    PURPLE_WALL_BANNER,
-    PURPLE_WOOL,
-    PURPUR_BLOCK,
-    PURPUR_PILLAR,
-    PURPUR_SLAB,
-    PURPUR_STAIRS,
-    QUARTZ_BLOCK,
-    QUARTZ_PILLAR,
-    QUARTZ_SLAB,
-    QUARTZ_STAIRS,
-    RAIL,
-    RED_BANNER,
-    RED_BED,
-    RED_CARPET,
-    RED_CONCRETE,
-    RED_CONCRETE_POWDER,
-    RED_GLAZED_TERRACOTTA,
-    RED_MUSHROOM,
-    RED_MUSHROOM_BLOCK,
-    RED_NETHER_BRICKS,
-    RED_SAND,
-    RED_SANDSTONE,
-    RED_SANDSTONE_SLAB,
-    RED_SANDSTONE_STAIRS,
-    RED_SHULKER_BOX,
-    RED_STAINED_GLASS,
-    RED_STAINED_GLASS_PANE,
-    RED_TERRACOTTA,
-    RED_TULIP,
-    RED_WALL_BANNER,
-    RED_WOOL,
-    REDSTONE_BLOCK,
-    REDSTONE_LAMP,
-    REDSTONE_ORE,
-    REDSTONE_TORCH,
-    REDSTONE_WALL_TORCH,
-    REDSTONE_WIRE,
-    REPEATER,
-    REPEATING_COMMAND_BLOCK,
-    ROSE_BUSH,
-    SAND,
-    SANDSTONE,
-    SANDSTONE_SLAB,
-    SANDSTONE_STAIRS,
-    SEA_LANTERN,
-    SEA_PICKLE,
-    SEAGRASS,
-    SHULKER_BOX,
-    SIGN,
-    SKELETON_SKULL,
-    SKELETON_WALL_SKULL,
-    SLIME_BLOCK,
-    SMOOTH_QUARTZ,
-    SMOOTH_RED_SANDSTONE,
-    SMOOTH_SANDSTONE,
-    SMOOTH_STONE,
-    SNOW,
-    SNOW_BLOCK,
-    SOUL_SAND,
-    SPAWNER,
-    SPONGE,
-    SPRUCE_BUTTON,
-    SPRUCE_DOOR,
-    SPRUCE_FENCE,
-    SPRUCE_FENCE_GATE,
-    SPRUCE_LEAVES,
-    SPRUCE_LOG,
-    SPRUCE_PLANKS,
-    SPRUCE_PRESSURE_PLATE,
-    SPRUCE_SAPLING,
-    SPRUCE_SLAB,
-    SPRUCE_STAIRS,
-    SPRUCE_TRAPDOOR,
-    SPRUCE_WOOD,
-    STICKY_PISTON,
-    STONE,
-    STONE_BRICK_SLAB,
-    STONE_BRICK_STAIRS,
-    STONE_BRICKS,
-    STONE_BUTTON,
-    STONE_PRESSURE_PLATE,
-    STONE_SLAB,
-    STRIPPED_ACACIA_LOG,
-    STRIPPED_ACACIA_WOOD,
-    STRIPPED_BIRCH_LOG,
-    STRIPPED_BIRCH_WOOD,
-    STRIPPED_DARK_OAK_LOG,
-    STRIPPED_DARK_OAK_WOOD,
-    STRIPPED_JUNGLE_LOG,
-    STRIPPED_JUNGLE_WOOD,
-    STRIPPED_OAK_LOG,
-    STRIPPED_OAK_WOOD,
-    STRIPPED_SPRUCE_LOG,
-    STRIPPED_SPRUCE_WOOD,
-    STRUCTURE_BLOCK,
-    STRUCTURE_VOID,
-    SUGAR_CANE,
-    SUNFLOWER,
-    TALL_GRASS,
-    TALL_SEAGRASS,
-    TERRACOTTA,
-    TNT,
-    TORCH,
-    TRAPPED_CHEST,
-    TRIPWIRE,
-    TRIPWIRE_HOOK,
-    TUBE_CORAL,
-    TUBE_CORAL_BLOCK,
-    TUBE_CORAL_FAN,
-    TUBE_CORAL_WALL_FAN,
-    TURTLE_EGG,
-    VINE,
-    VOID_AIR,
-    WALL_SIGN,
-    WALL_TORCH,
-    WATER,
-    WET_SPONGE,
-    WHEAT,
-    WHITE_BANNER,
-    WHITE_BED,
-    WHITE_CARPET,
-    WHITE_CONCRETE,
-    WHITE_CONCRETE_POWDER,
-    WHITE_GLAZED_TERRACOTTA,
-    WHITE_SHULKER_BOX,
-    WHITE_STAINED_GLASS,
-    WHITE_STAINED_GLASS_PANE,
-    WHITE_TERRACOTTA,
-    WHITE_TULIP,
-    WHITE_WALL_BANNER,
-    WHITE_WOOL,
-    WITHER_SKELETON_SKULL,
-    WITHER_SKELETON_WALL_SKULL,
-    YELLOW_BANNER,
-    YELLOW_BED,
-    YELLOW_CARPET,
-    YELLOW_CONCRETE,
-    YELLOW_CONCRETE_POWDER,
-    YELLOW_GLAZED_TERRACOTTA,
-    YELLOW_SHULKER_BOX,
-    YELLOW_STAINED_GLASS,
-    YELLOW_STAINED_GLASS_PANE,
-    YELLOW_TERRACOTTA,
-    YELLOW_WALL_BANNER,
-    YELLOW_WOOL,
-    ZOMBIE_HEAD,
-    ZOMBIE_WALL_HEAD,
-
-    ;
+public final class BlockTypes {
+    // Doesn't really matter what the hardcoded values are, as FAWE will update it on load
+    @Nullable public static final BlockType __RESERVED__ = null;
+    @Nullable public static final BlockType ACACIA_BUTTON = null;
+    @Nullable public static final BlockType ACACIA_DOOR = null;
+    @Nullable public static final BlockType ACACIA_FENCE = null;
+    @Nullable public static final BlockType ACACIA_FENCE_GATE = null;
+    @Nullable public static final BlockType ACACIA_LEAVES = null;
+    @Nullable public static final BlockType ACACIA_LOG = null;
+    @Nullable public static final BlockType ACACIA_PLANKS = null;
+    @Nullable public static final BlockType ACACIA_PRESSURE_PLATE = null;
+    @Nullable public static final BlockType ACACIA_SAPLING = null;
+    @Nullable public static final BlockType ACACIA_SLAB = null;
+    @Nullable public static final BlockType ACACIA_STAIRS = null;
+    @Nullable public static final BlockType ACACIA_TRAPDOOR = null;
+    @Nullable public static final BlockType ACACIA_WOOD = null;
+    @Nullable public static final BlockType ACTIVATOR_RAIL = null;
+    @Nullable public static final BlockType AIR = null;
+    @Nullable public static final BlockType ALLIUM = null;
+    @Nullable public static final BlockType ANDESITE = null;
+    @Nullable public static final BlockType ANVIL = null;
+    @Nullable public static final BlockType ATTACHED_MELON_STEM = null;
+    @Nullable public static final BlockType ATTACHED_PUMPKIN_STEM = null;
+    @Nullable public static final BlockType AZURE_BLUET = null;
+    @Nullable public static final BlockType BARRIER = null;
+    @Nullable public static final BlockType BEACON = null;
+    @Nullable public static final BlockType BEDROCK = null;
+    @Nullable public static final BlockType BEETROOTS = null;
+    @Nullable public static final BlockType BIRCH_BUTTON = null;
+    @Nullable public static final BlockType BIRCH_DOOR = null;
+    @Nullable public static final BlockType BIRCH_FENCE = null;
+    @Nullable public static final BlockType BIRCH_FENCE_GATE = null;
+    @Nullable public static final BlockType BIRCH_LEAVES = null;
+    @Nullable public static final BlockType BIRCH_LOG = null;
+    @Nullable public static final BlockType BIRCH_PLANKS = null;
+    @Nullable public static final BlockType BIRCH_PRESSURE_PLATE = null;
+    @Nullable public static final BlockType BIRCH_SAPLING = null;
+    @Nullable public static final BlockType BIRCH_SLAB = null;
+    @Nullable public static final BlockType BIRCH_STAIRS = null;
+    @Nullable public static final BlockType BIRCH_TRAPDOOR = null;
+    @Nullable public static final BlockType BIRCH_WOOD = null;
+    @Nullable public static final BlockType BLACK_BANNER = null;
+    @Nullable public static final BlockType BLACK_BED = null;
+    @Nullable public static final BlockType BLACK_CARPET = null;
+    @Nullable public static final BlockType BLACK_CONCRETE = null;
+    @Nullable public static final BlockType BLACK_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType BLACK_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType BLACK_SHULKER_BOX = null;
+    @Nullable public static final BlockType BLACK_STAINED_GLASS = null;
+    @Nullable public static final BlockType BLACK_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType BLACK_TERRACOTTA = null;
+    @Nullable public static final BlockType BLACK_WALL_BANNER = null;
+    @Nullable public static final BlockType BLACK_WOOL = null;
+    @Nullable public static final BlockType BLUE_BANNER = null;
+    @Nullable public static final BlockType BLUE_BED = null;
+    @Nullable public static final BlockType BLUE_CARPET = null;
+    @Nullable public static final BlockType BLUE_CONCRETE = null;
+    @Nullable public static final BlockType BLUE_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType BLUE_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType BLUE_ICE = null;
+    @Nullable public static final BlockType BLUE_ORCHID = null;
+    @Nullable public static final BlockType BLUE_SHULKER_BOX = null;
+    @Nullable public static final BlockType BLUE_STAINED_GLASS = null;
+    @Nullable public static final BlockType BLUE_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType BLUE_TERRACOTTA = null;
+    @Nullable public static final BlockType BLUE_WALL_BANNER = null;
+    @Nullable public static final BlockType BLUE_WOOL = null;
+    @Nullable public static final BlockType BONE_BLOCK = null;
+    @Nullable public static final BlockType BOOKSHELF = null;
+    @Nullable public static final BlockType BRAIN_CORAL = null;
+    @Nullable public static final BlockType BRAIN_CORAL_BLOCK = null;
+    @Nullable public static final BlockType BRAIN_CORAL_FAN = null;
+    @Nullable public static final BlockType BRAIN_CORAL_WALL_FAN = null;
+    @Nullable public static final BlockType BREWING_STAND = null;
+    @Nullable public static final BlockType BRICK_SLAB = null;
+    @Nullable public static final BlockType BRICK_STAIRS = null;
+    @Nullable public static final BlockType BRICKS = null;
+    @Nullable public static final BlockType BROWN_BANNER = null;
+    @Nullable public static final BlockType BROWN_BED = null;
+    @Nullable public static final BlockType BROWN_CARPET = null;
+    @Nullable public static final BlockType BROWN_CONCRETE = null;
+    @Nullable public static final BlockType BROWN_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType BROWN_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType BROWN_MUSHROOM = null;
+    @Nullable public static final BlockType BROWN_MUSHROOM_BLOCK = null;
+    @Nullable public static final BlockType BROWN_SHULKER_BOX = null;
+    @Nullable public static final BlockType BROWN_STAINED_GLASS = null;
+    @Nullable public static final BlockType BROWN_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType BROWN_TERRACOTTA = null;
+    @Nullable public static final BlockType BROWN_WALL_BANNER = null;
+    @Nullable public static final BlockType BROWN_WOOL = null;
+    @Nullable public static final BlockType BUBBLE_COLUMN = null;
+    @Nullable public static final BlockType BUBBLE_CORAL = null;
+    @Nullable public static final BlockType BUBBLE_CORAL_BLOCK = null;
+    @Nullable public static final BlockType BUBBLE_CORAL_FAN = null;
+    @Nullable public static final BlockType BUBBLE_CORAL_WALL_FAN = null;
+    @Nullable public static final BlockType CACTUS = null;
+    @Nullable public static final BlockType CAKE = null;
+    @Nullable public static final BlockType CARROTS = null;
+    @Nullable public static final BlockType CARVED_PUMPKIN = null;
+    @Nullable public static final BlockType CAULDRON = null;
+    @Nullable public static final BlockType CAVE_AIR = null;
+    @Nullable public static final BlockType CHAIN_COMMAND_BLOCK = null;
+    @Nullable public static final BlockType CHEST = null;
+    @Nullable public static final BlockType CHIPPED_ANVIL = null;
+    @Nullable public static final BlockType CHISELED_QUARTZ_BLOCK = null;
+    @Nullable public static final BlockType CHISELED_RED_SANDSTONE = null;
+    @Nullable public static final BlockType CHISELED_SANDSTONE = null;
+    @Nullable public static final BlockType CHISELED_STONE_BRICKS = null;
+    @Nullable public static final BlockType CHORUS_FLOWER = null;
+    @Nullable public static final BlockType CHORUS_PLANT = null;
+    @Nullable public static final BlockType CLAY = null;
+    @Nullable public static final BlockType COAL_BLOCK = null;
+    @Nullable public static final BlockType COAL_ORE = null;
+    @Nullable public static final BlockType COARSE_DIRT = null;
+    @Nullable public static final BlockType COBBLESTONE = null;
+    @Nullable public static final BlockType COBBLESTONE_SLAB = null;
+    @Nullable public static final BlockType COBBLESTONE_STAIRS = null;
+    @Nullable public static final BlockType COBBLESTONE_WALL = null;
+    @Nullable public static final BlockType COBWEB = null;
+    @Nullable public static final BlockType COCOA = null;
+    @Nullable public static final BlockType COMMAND_BLOCK = null;
+    @Nullable public static final BlockType COMPARATOR = null;
+    @Nullable public static final BlockType CONDUIT = null;
+    @Nullable public static final BlockType CRACKED_STONE_BRICKS = null;
+    @Nullable public static final BlockType CRAFTING_TABLE = null;
+    @Nullable public static final BlockType CREEPER_HEAD = null;
+    @Nullable public static final BlockType CREEPER_WALL_HEAD = null;
+    @Nullable public static final BlockType CUT_RED_SANDSTONE = null;
+    @Nullable public static final BlockType CUT_SANDSTONE = null;
+    @Nullable public static final BlockType CYAN_BANNER = null;
+    @Nullable public static final BlockType CYAN_BED = null;
+    @Nullable public static final BlockType CYAN_CARPET = null;
+    @Nullable public static final BlockType CYAN_CONCRETE = null;
+    @Nullable public static final BlockType CYAN_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType CYAN_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType CYAN_SHULKER_BOX = null;
+    @Nullable public static final BlockType CYAN_STAINED_GLASS = null;
+    @Nullable public static final BlockType CYAN_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType CYAN_TERRACOTTA = null;
+    @Nullable public static final BlockType CYAN_WALL_BANNER = null;
+    @Nullable public static final BlockType CYAN_WOOL = null;
+    @Nullable public static final BlockType DAMAGED_ANVIL = null;
+    @Nullable public static final BlockType DANDELION = null;
+    @Nullable public static final BlockType DARK_OAK_BUTTON = null;
+    @Nullable public static final BlockType DARK_OAK_DOOR = null;
+    @Nullable public static final BlockType DARK_OAK_FENCE = null;
+    @Nullable public static final BlockType DARK_OAK_FENCE_GATE = null;
+    @Nullable public static final BlockType DARK_OAK_LEAVES = null;
+    @Nullable public static final BlockType DARK_OAK_LOG = null;
+    @Nullable public static final BlockType DARK_OAK_PLANKS = null;
+    @Nullable public static final BlockType DARK_OAK_PRESSURE_PLATE = null;
+    @Nullable public static final BlockType DARK_OAK_SAPLING = null;
+    @Nullable public static final BlockType DARK_OAK_SLAB = null;
+    @Nullable public static final BlockType DARK_OAK_STAIRS = null;
+    @Nullable public static final BlockType DARK_OAK_TRAPDOOR = null;
+    @Nullable public static final BlockType DARK_OAK_WOOD = null;
+    @Nullable public static final BlockType DARK_PRISMARINE = null;
+    @Nullable public static final BlockType DARK_PRISMARINE_SLAB = null;
+    @Nullable public static final BlockType DARK_PRISMARINE_STAIRS = null;
+    @Nullable public static final BlockType DAYLIGHT_DETECTOR = null;
+    @Nullable public static final BlockType DEAD_BRAIN_CORAL = null;
+    @Nullable public static final BlockType DEAD_BRAIN_CORAL_BLOCK = null;
+    @Nullable public static final BlockType DEAD_BRAIN_CORAL_FAN = null;
+    @Nullable public static final BlockType DEAD_BRAIN_CORAL_WALL_FAN = null;
+    @Nullable public static final BlockType DEAD_BUBBLE_CORAL = null;
+    @Nullable public static final BlockType DEAD_BUBBLE_CORAL_BLOCK = null;
+    @Nullable public static final BlockType DEAD_BUBBLE_CORAL_FAN = null;
+    @Nullable public static final BlockType DEAD_BUBBLE_CORAL_WALL_FAN = null;
+    @Nullable public static final BlockType DEAD_BUSH = null;
+    @Nullable public static final BlockType DEAD_FIRE_CORAL = null;
+    @Nullable public static final BlockType DEAD_FIRE_CORAL_BLOCK = null;
+    @Nullable public static final BlockType DEAD_FIRE_CORAL_FAN = null;
+    @Nullable public static final BlockType DEAD_FIRE_CORAL_WALL_FAN = null;
+    @Nullable public static final BlockType DEAD_HORN_CORAL = null;
+    @Nullable public static final BlockType DEAD_HORN_CORAL_BLOCK = null;
+    @Nullable public static final BlockType DEAD_HORN_CORAL_FAN = null;
+    @Nullable public static final BlockType DEAD_HORN_CORAL_WALL_FAN = null;
+    @Nullable public static final BlockType DEAD_TUBE_CORAL = null;
+    @Nullable public static final BlockType DEAD_TUBE_CORAL_BLOCK = null;
+    @Nullable public static final BlockType DEAD_TUBE_CORAL_FAN = null;
+    @Nullable public static final BlockType DEAD_TUBE_CORAL_WALL_FAN = null;
+    @Nullable public static final BlockType DETECTOR_RAIL = null;
+    @Nullable public static final BlockType DIAMOND_BLOCK = null;
+    @Nullable public static final BlockType DIAMOND_ORE = null;
+    @Nullable public static final BlockType DIORITE = null;
+    @Nullable public static final BlockType DIRT = null;
+    @Nullable public static final BlockType DISPENSER = null;
+    @Nullable public static final BlockType DRAGON_EGG = null;
+    @Nullable public static final BlockType DRAGON_HEAD = null;
+    @Nullable public static final BlockType DRAGON_WALL_HEAD = null;
+    @Nullable public static final BlockType DRIED_KELP_BLOCK = null;
+    @Nullable public static final BlockType DROPPER = null;
+    @Nullable public static final BlockType EMERALD_BLOCK = null;
+    @Nullable public static final BlockType EMERALD_ORE = null;
+    @Nullable public static final BlockType ENCHANTING_TABLE = null;
+    @Nullable public static final BlockType END_GATEWAY = null;
+    @Nullable public static final BlockType END_PORTAL = null;
+    @Nullable public static final BlockType END_PORTAL_FRAME = null;
+    @Nullable public static final BlockType END_ROD = null;
+    @Nullable public static final BlockType END_STONE = null;
+    @Nullable public static final BlockType END_STONE_BRICKS = null;
+    @Nullable public static final BlockType ENDER_CHEST = null;
+    @Nullable public static final BlockType FARMLAND = null;
+    @Nullable public static final BlockType FERN = null;
+    @Nullable public static final BlockType FIRE = null;
+    @Nullable public static final BlockType FIRE_CORAL = null;
+    @Nullable public static final BlockType FIRE_CORAL_BLOCK = null;
+    @Nullable public static final BlockType FIRE_CORAL_FAN = null;
+    @Nullable public static final BlockType FIRE_CORAL_WALL_FAN = null;
+    @Nullable public static final BlockType FLOWER_POT = null;
+    @Nullable public static final BlockType FROSTED_ICE = null;
+    @Nullable public static final BlockType FURNACE = null;
+    @Nullable public static final BlockType GLASS = null;
+    @Nullable public static final BlockType GLASS_PANE = null;
+    @Nullable public static final BlockType GLOWSTONE = null;
+    @Nullable public static final BlockType GOLD_BLOCK = null;
+    @Nullable public static final BlockType GOLD_ORE = null;
+    @Nullable public static final BlockType GRANITE = null;
+    @Nullable public static final BlockType GRASS = null;
+    @Nullable public static final BlockType GRASS_BLOCK = null;
+    @Nullable public static final BlockType GRASS_PATH = null;
+    @Nullable public static final BlockType GRAVEL = null;
+    @Nullable public static final BlockType GRAY_BANNER = null;
+    @Nullable public static final BlockType GRAY_BED = null;
+    @Nullable public static final BlockType GRAY_CARPET = null;
+    @Nullable public static final BlockType GRAY_CONCRETE = null;
+    @Nullable public static final BlockType GRAY_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType GRAY_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType GRAY_SHULKER_BOX = null;
+    @Nullable public static final BlockType GRAY_STAINED_GLASS = null;
+    @Nullable public static final BlockType GRAY_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType GRAY_TERRACOTTA = null;
+    @Nullable public static final BlockType GRAY_WALL_BANNER = null;
+    @Nullable public static final BlockType GRAY_WOOL = null;
+    @Nullable public static final BlockType GREEN_BANNER = null;
+    @Nullable public static final BlockType GREEN_BED = null;
+    @Nullable public static final BlockType GREEN_CARPET = null;
+    @Nullable public static final BlockType GREEN_CONCRETE = null;
+    @Nullable public static final BlockType GREEN_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType GREEN_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType GREEN_SHULKER_BOX = null;
+    @Nullable public static final BlockType GREEN_STAINED_GLASS = null;
+    @Nullable public static final BlockType GREEN_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType GREEN_TERRACOTTA = null;
+    @Nullable public static final BlockType GREEN_WALL_BANNER = null;
+    @Nullable public static final BlockType GREEN_WOOL = null;
+    @Nullable public static final BlockType HAY_BLOCK = null;
+    @Nullable public static final BlockType HEAVY_WEIGHTED_PRESSURE_PLATE = null;
+    @Nullable public static final BlockType HOPPER = null;
+    @Nullable public static final BlockType HORN_CORAL = null;
+    @Nullable public static final BlockType HORN_CORAL_BLOCK = null;
+    @Nullable public static final BlockType HORN_CORAL_FAN = null;
+    @Nullable public static final BlockType HORN_CORAL_WALL_FAN = null;
+    @Nullable public static final BlockType ICE = null;
+    @Nullable public static final BlockType INFESTED_CHISELED_STONE_BRICKS = null;
+    @Nullable public static final BlockType INFESTED_COBBLESTONE = null;
+    @Nullable public static final BlockType INFESTED_CRACKED_STONE_BRICKS = null;
+    @Nullable public static final BlockType INFESTED_MOSSY_STONE_BRICKS = null;
+    @Nullable public static final BlockType INFESTED_STONE = null;
+    @Nullable public static final BlockType INFESTED_STONE_BRICKS = null;
+    @Nullable public static final BlockType IRON_BARS = null;
+    @Nullable public static final BlockType IRON_BLOCK = null;
+    @Nullable public static final BlockType IRON_DOOR = null;
+    @Nullable public static final BlockType IRON_ORE = null;
+    @Nullable public static final BlockType IRON_TRAPDOOR = null;
+    @Nullable public static final BlockType JACK_O_LANTERN = null;
+    @Nullable public static final BlockType JUKEBOX = null;
+    @Nullable public static final BlockType JUNGLE_BUTTON = null;
+    @Nullable public static final BlockType JUNGLE_DOOR = null;
+    @Nullable public static final BlockType JUNGLE_FENCE = null;
+    @Nullable public static final BlockType JUNGLE_FENCE_GATE = null;
+    @Nullable public static final BlockType JUNGLE_LEAVES = null;
+    @Nullable public static final BlockType JUNGLE_LOG = null;
+    @Nullable public static final BlockType JUNGLE_PLANKS = null;
+    @Nullable public static final BlockType JUNGLE_PRESSURE_PLATE = null;
+    @Nullable public static final BlockType JUNGLE_SAPLING = null;
+    @Nullable public static final BlockType JUNGLE_SLAB = null;
+    @Nullable public static final BlockType JUNGLE_STAIRS = null;
+    @Nullable public static final BlockType JUNGLE_TRAPDOOR = null;
+    @Nullable public static final BlockType JUNGLE_WOOD = null;
+    @Nullable public static final BlockType KELP = null;
+    @Nullable public static final BlockType KELP_PLANT = null;
+    @Nullable public static final BlockType LADDER = null;
+    @Nullable public static final BlockType LAPIS_BLOCK = null;
+    @Nullable public static final BlockType LAPIS_ORE = null;
+    @Nullable public static final BlockType LARGE_FERN = null;
+    @Nullable public static final BlockType LAVA = null;
+    @Nullable public static final BlockType LEVER = null;
+    @Nullable public static final BlockType LIGHT_BLUE_BANNER = null;
+    @Nullable public static final BlockType LIGHT_BLUE_BED = null;
+    @Nullable public static final BlockType LIGHT_BLUE_CARPET = null;
+    @Nullable public static final BlockType LIGHT_BLUE_CONCRETE = null;
+    @Nullable public static final BlockType LIGHT_BLUE_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType LIGHT_BLUE_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType LIGHT_BLUE_SHULKER_BOX = null;
+    @Nullable public static final BlockType LIGHT_BLUE_STAINED_GLASS = null;
+    @Nullable public static final BlockType LIGHT_BLUE_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType LIGHT_BLUE_TERRACOTTA = null;
+    @Nullable public static final BlockType LIGHT_BLUE_WALL_BANNER = null;
+    @Nullable public static final BlockType LIGHT_BLUE_WOOL = null;
+    @Nullable public static final BlockType LIGHT_GRAY_BANNER = null;
+    @Nullable public static final BlockType LIGHT_GRAY_BED = null;
+    @Nullable public static final BlockType LIGHT_GRAY_CARPET = null;
+    @Nullable public static final BlockType LIGHT_GRAY_CONCRETE = null;
+    @Nullable public static final BlockType LIGHT_GRAY_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType LIGHT_GRAY_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType LIGHT_GRAY_SHULKER_BOX = null;
+    @Nullable public static final BlockType LIGHT_GRAY_STAINED_GLASS = null;
+    @Nullable public static final BlockType LIGHT_GRAY_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType LIGHT_GRAY_TERRACOTTA = null;
+    @Nullable public static final BlockType LIGHT_GRAY_WALL_BANNER = null;
+    @Nullable public static final BlockType LIGHT_GRAY_WOOL = null;
+    @Nullable public static final BlockType LIGHT_WEIGHTED_PRESSURE_PLATE = null;
+    @Nullable public static final BlockType LILAC = null;
+    @Nullable public static final BlockType LILY_PAD = null;
+    @Nullable public static final BlockType LIME_BANNER = null;
+    @Nullable public static final BlockType LIME_BED = null;
+    @Nullable public static final BlockType LIME_CARPET = null;
+    @Nullable public static final BlockType LIME_CONCRETE = null;
+    @Nullable public static final BlockType LIME_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType LIME_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType LIME_SHULKER_BOX = null;
+    @Nullable public static final BlockType LIME_STAINED_GLASS = null;
+    @Nullable public static final BlockType LIME_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType LIME_TERRACOTTA = null;
+    @Nullable public static final BlockType LIME_WALL_BANNER = null;
+    @Nullable public static final BlockType LIME_WOOL = null;
+    @Nullable public static final BlockType MAGENTA_BANNER = null;
+    @Nullable public static final BlockType MAGENTA_BED = null;
+    @Nullable public static final BlockType MAGENTA_CARPET = null;
+    @Nullable public static final BlockType MAGENTA_CONCRETE = null;
+    @Nullable public static final BlockType MAGENTA_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType MAGENTA_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType MAGENTA_SHULKER_BOX = null;
+    @Nullable public static final BlockType MAGENTA_STAINED_GLASS = null;
+    @Nullable public static final BlockType MAGENTA_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType MAGENTA_TERRACOTTA = null;
+    @Nullable public static final BlockType MAGENTA_WALL_BANNER = null;
+    @Nullable public static final BlockType MAGENTA_WOOL = null;
+    @Nullable public static final BlockType MAGMA_BLOCK = null;
+    @Nullable public static final BlockType MELON = null;
+    @Nullable public static final BlockType MELON_STEM = null;
+    @Nullable public static final BlockType MOSSY_COBBLESTONE = null;
+    @Nullable public static final BlockType MOSSY_COBBLESTONE_WALL = null;
+    @Nullable public static final BlockType MOSSY_STONE_BRICKS = null;
+    @Nullable public static final BlockType MOVING_PISTON = null;
+    @Nullable public static final BlockType MUSHROOM_STEM = null;
+    @Nullable public static final BlockType MYCELIUM = null;
+    @Nullable public static final BlockType NETHER_BRICK_FENCE = null;
+    @Nullable public static final BlockType NETHER_BRICK_SLAB = null;
+    @Nullable public static final BlockType NETHER_BRICK_STAIRS = null;
+    @Nullable public static final BlockType NETHER_BRICKS = null;
+    @Nullable public static final BlockType NETHER_PORTAL = null;
+    @Nullable public static final BlockType NETHER_QUARTZ_ORE = null;
+    @Nullable public static final BlockType NETHER_WART = null;
+    @Nullable public static final BlockType NETHER_WART_BLOCK = null;
+    @Nullable public static final BlockType NETHERRACK = null;
+    @Nullable public static final BlockType NOTE_BLOCK = null;
+    @Nullable public static final BlockType OAK_BUTTON = null;
+    @Nullable public static final BlockType OAK_DOOR = null;
+    @Nullable public static final BlockType OAK_FENCE = null;
+    @Nullable public static final BlockType OAK_FENCE_GATE = null;
+    @Nullable public static final BlockType OAK_LEAVES = null;
+    @Nullable public static final BlockType OAK_LOG = null;
+    @Nullable public static final BlockType OAK_PLANKS = null;
+    @Nullable public static final BlockType OAK_PRESSURE_PLATE = null;
+    @Nullable public static final BlockType OAK_SAPLING = null;
+    @Nullable public static final BlockType OAK_SLAB = null;
+    @Nullable public static final BlockType OAK_STAIRS = null;
+    @Nullable public static final BlockType OAK_TRAPDOOR = null;
+    @Nullable public static final BlockType OAK_WOOD = null;
+    @Nullable public static final BlockType OBSERVER = null;
+    @Nullable public static final BlockType OBSIDIAN = null;
+    @Nullable public static final BlockType ORANGE_BANNER = null;
+    @Nullable public static final BlockType ORANGE_BED = null;
+    @Nullable public static final BlockType ORANGE_CARPET = null;
+    @Nullable public static final BlockType ORANGE_CONCRETE = null;
+    @Nullable public static final BlockType ORANGE_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType ORANGE_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType ORANGE_SHULKER_BOX = null;
+    @Nullable public static final BlockType ORANGE_STAINED_GLASS = null;
+    @Nullable public static final BlockType ORANGE_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType ORANGE_TERRACOTTA = null;
+    @Nullable public static final BlockType ORANGE_TULIP = null;
+    @Nullable public static final BlockType ORANGE_WALL_BANNER = null;
+    @Nullable public static final BlockType ORANGE_WOOL = null;
+    @Nullable public static final BlockType OXEYE_DAISY = null;
+    @Nullable public static final BlockType PACKED_ICE = null;
+    @Nullable public static final BlockType PEONY = null;
+    @Nullable public static final BlockType PETRIFIED_OAK_SLAB = null;
+    @Nullable public static final BlockType PINK_BANNER = null;
+    @Nullable public static final BlockType PINK_BED = null;
+    @Nullable public static final BlockType PINK_CARPET = null;
+    @Nullable public static final BlockType PINK_CONCRETE = null;
+    @Nullable public static final BlockType PINK_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType PINK_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType PINK_SHULKER_BOX = null;
+    @Nullable public static final BlockType PINK_STAINED_GLASS = null;
+    @Nullable public static final BlockType PINK_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType PINK_TERRACOTTA = null;
+    @Nullable public static final BlockType PINK_TULIP = null;
+    @Nullable public static final BlockType PINK_WALL_BANNER = null;
+    @Nullable public static final BlockType PINK_WOOL = null;
+    @Nullable public static final BlockType PISTON = null;
+    @Nullable public static final BlockType PISTON_HEAD = null;
+    @Nullable public static final BlockType PLAYER_HEAD = null;
+    @Nullable public static final BlockType PLAYER_WALL_HEAD = null;
+    @Nullable public static final BlockType PODZOL = null;
+    @Nullable public static final BlockType POLISHED_ANDESITE = null;
+    @Nullable public static final BlockType POLISHED_DIORITE = null;
+    @Nullable public static final BlockType POLISHED_GRANITE = null;
+    @Nullable public static final BlockType POPPY = null;
+    @Nullable public static final BlockType POTATOES = null;
+    @Nullable public static final BlockType POTTED_ACACIA_SAPLING = null;
+    @Nullable public static final BlockType POTTED_ALLIUM = null;
+    @Nullable public static final BlockType POTTED_AZURE_BLUET = null;
+    @Nullable public static final BlockType POTTED_BIRCH_SAPLING = null;
+    @Nullable public static final BlockType POTTED_BLUE_ORCHID = null;
+    @Nullable public static final BlockType POTTED_BROWN_MUSHROOM = null;
+    @Nullable public static final BlockType POTTED_CACTUS = null;
+    @Nullable public static final BlockType POTTED_DANDELION = null;
+    @Nullable public static final BlockType POTTED_DARK_OAK_SAPLING = null;
+    @Nullable public static final BlockType POTTED_DEAD_BUSH = null;
+    @Nullable public static final BlockType POTTED_FERN = null;
+    @Nullable public static final BlockType POTTED_JUNGLE_SAPLING = null;
+    @Nullable public static final BlockType POTTED_OAK_SAPLING = null;
+    @Nullable public static final BlockType POTTED_ORANGE_TULIP = null;
+    @Nullable public static final BlockType POTTED_OXEYE_DAISY = null;
+    @Nullable public static final BlockType POTTED_PINK_TULIP = null;
+    @Nullable public static final BlockType POTTED_POPPY = null;
+    @Nullable public static final BlockType POTTED_RED_MUSHROOM = null;
+    @Nullable public static final BlockType POTTED_RED_TULIP = null;
+    @Nullable public static final BlockType POTTED_SPRUCE_SAPLING = null;
+    @Nullable public static final BlockType POTTED_WHITE_TULIP = null;
+    @Nullable public static final BlockType POWERED_RAIL = null;
+    @Nullable public static final BlockType PRISMARINE = null;
+    @Nullable public static final BlockType PRISMARINE_BRICK_SLAB = null;
+    @Nullable public static final BlockType PRISMARINE_BRICK_STAIRS = null;
+    @Nullable public static final BlockType PRISMARINE_BRICKS = null;
+    @Nullable public static final BlockType PRISMARINE_SLAB = null;
+    @Nullable public static final BlockType PRISMARINE_STAIRS = null;
+    @Nullable public static final BlockType PUMPKIN = null;
+    @Nullable public static final BlockType PUMPKIN_STEM = null;
+    @Nullable public static final BlockType PURPLE_BANNER = null;
+    @Nullable public static final BlockType PURPLE_BED = null;
+    @Nullable public static final BlockType PURPLE_CARPET = null;
+    @Nullable public static final BlockType PURPLE_CONCRETE = null;
+    @Nullable public static final BlockType PURPLE_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType PURPLE_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType PURPLE_SHULKER_BOX = null;
+    @Nullable public static final BlockType PURPLE_STAINED_GLASS = null;
+    @Nullable public static final BlockType PURPLE_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType PURPLE_TERRACOTTA = null;
+    @Nullable public static final BlockType PURPLE_WALL_BANNER = null;
+    @Nullable public static final BlockType PURPLE_WOOL = null;
+    @Nullable public static final BlockType PURPUR_BLOCK = null;
+    @Nullable public static final BlockType PURPUR_PILLAR = null;
+    @Nullable public static final BlockType PURPUR_SLAB = null;
+    @Nullable public static final BlockType PURPUR_STAIRS = null;
+    @Nullable public static final BlockType QUARTZ_BLOCK = null;
+    @Nullable public static final BlockType QUARTZ_PILLAR = null;
+    @Nullable public static final BlockType QUARTZ_SLAB = null;
+    @Nullable public static final BlockType QUARTZ_STAIRS = null;
+    @Nullable public static final BlockType RAIL = null;
+    @Nullable public static final BlockType RED_BANNER = null;
+    @Nullable public static final BlockType RED_BED = null;
+    @Nullable public static final BlockType RED_CARPET = null;
+    @Nullable public static final BlockType RED_CONCRETE = null;
+    @Nullable public static final BlockType RED_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType RED_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType RED_MUSHROOM = null;
+    @Nullable public static final BlockType RED_MUSHROOM_BLOCK = null;
+    @Nullable public static final BlockType RED_NETHER_BRICKS = null;
+    @Nullable public static final BlockType RED_SAND = null;
+    @Nullable public static final BlockType RED_SANDSTONE = null;
+    @Nullable public static final BlockType RED_SANDSTONE_SLAB = null;
+    @Nullable public static final BlockType RED_SANDSTONE_STAIRS = null;
+    @Nullable public static final BlockType RED_SHULKER_BOX = null;
+    @Nullable public static final BlockType RED_STAINED_GLASS = null;
+    @Nullable public static final BlockType RED_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType RED_TERRACOTTA = null;
+    @Nullable public static final BlockType RED_TULIP = null;
+    @Nullable public static final BlockType RED_WALL_BANNER = null;
+    @Nullable public static final BlockType RED_WOOL = null;
+    @Nullable public static final BlockType REDSTONE_BLOCK = null;
+    @Nullable public static final BlockType REDSTONE_LAMP = null;
+    @Nullable public static final BlockType REDSTONE_ORE = null;
+    @Nullable public static final BlockType REDSTONE_TORCH = null;
+    @Nullable public static final BlockType REDSTONE_WALL_TORCH = null;
+    @Nullable public static final BlockType REDSTONE_WIRE = null;
+    @Nullable public static final BlockType REPEATER = null;
+    @Nullable public static final BlockType REPEATING_COMMAND_BLOCK = null;
+    @Nullable public static final BlockType ROSE_BUSH = null;
+    @Nullable public static final BlockType SAND = null;
+    @Nullable public static final BlockType SANDSTONE = null;
+    @Nullable public static final BlockType SANDSTONE_SLAB = null;
+    @Nullable public static final BlockType SANDSTONE_STAIRS = null;
+    @Nullable public static final BlockType SEA_LANTERN = null;
+    @Nullable public static final BlockType SEA_PICKLE = null;
+    @Nullable public static final BlockType SEAGRASS = null;
+    @Nullable public static final BlockType SHULKER_BOX = null;
+    @Nullable public static final BlockType SIGN = null;
+    @Nullable public static final BlockType SKELETON_SKULL = null;
+    @Nullable public static final BlockType SKELETON_WALL_SKULL = null;
+    @Nullable public static final BlockType SLIME_BLOCK = null;
+    @Nullable public static final BlockType SMOOTH_QUARTZ = null;
+    @Nullable public static final BlockType SMOOTH_RED_SANDSTONE = null;
+    @Nullable public static final BlockType SMOOTH_SANDSTONE = null;
+    @Nullable public static final BlockType SMOOTH_STONE = null;
+    @Nullable public static final BlockType SNOW = null;
+    @Nullable public static final BlockType SNOW_BLOCK = null;
+    @Nullable public static final BlockType SOUL_SAND = null;
+    @Nullable public static final BlockType SPAWNER = null;
+    @Nullable public static final BlockType SPONGE = null;
+    @Nullable public static final BlockType SPRUCE_BUTTON = null;
+    @Nullable public static final BlockType SPRUCE_DOOR = null;
+    @Nullable public static final BlockType SPRUCE_FENCE = null;
+    @Nullable public static final BlockType SPRUCE_FENCE_GATE = null;
+    @Nullable public static final BlockType SPRUCE_LEAVES = null;
+    @Nullable public static final BlockType SPRUCE_LOG = null;
+    @Nullable public static final BlockType SPRUCE_PLANKS = null;
+    @Nullable public static final BlockType SPRUCE_PRESSURE_PLATE = null;
+    @Nullable public static final BlockType SPRUCE_SAPLING = null;
+    @Nullable public static final BlockType SPRUCE_SLAB = null;
+    @Nullable public static final BlockType SPRUCE_STAIRS = null;
+    @Nullable public static final BlockType SPRUCE_TRAPDOOR = null;
+    @Nullable public static final BlockType SPRUCE_WOOD = null;
+    @Nullable public static final BlockType STICKY_PISTON = null;
+    @Nullable public static final BlockType STONE = null;
+    @Nullable public static final BlockType STONE_BRICK_SLAB = null;
+    @Nullable public static final BlockType STONE_BRICK_STAIRS = null;
+    @Nullable public static final BlockType STONE_BRICKS = null;
+    @Nullable public static final BlockType STONE_BUTTON = null;
+    @Nullable public static final BlockType STONE_PRESSURE_PLATE = null;
+    @Nullable public static final BlockType STONE_SLAB = null;
+    @Nullable public static final BlockType STRIPPED_ACACIA_LOG = null;
+    @Nullable public static final BlockType STRIPPED_ACACIA_WOOD = null;
+    @Nullable public static final BlockType STRIPPED_BIRCH_LOG = null;
+    @Nullable public static final BlockType STRIPPED_BIRCH_WOOD = null;
+    @Nullable public static final BlockType STRIPPED_DARK_OAK_LOG = null;
+    @Nullable public static final BlockType STRIPPED_DARK_OAK_WOOD = null;
+    @Nullable public static final BlockType STRIPPED_JUNGLE_LOG = null;
+    @Nullable public static final BlockType STRIPPED_JUNGLE_WOOD = null;
+    @Nullable public static final BlockType STRIPPED_OAK_LOG = null;
+    @Nullable public static final BlockType STRIPPED_OAK_WOOD = null;
+    @Nullable public static final BlockType STRIPPED_SPRUCE_LOG = null;
+    @Nullable public static final BlockType STRIPPED_SPRUCE_WOOD = null;
+    @Nullable public static final BlockType STRUCTURE_BLOCK = null;
+    @Nullable public static final BlockType STRUCTURE_VOID = null;
+    @Nullable public static final BlockType SUGAR_CANE = null;
+    @Nullable public static final BlockType SUNFLOWER = null;
+    @Nullable public static final BlockType TALL_GRASS = null;
+    @Nullable public static final BlockType TALL_SEAGRASS = null;
+    @Nullable public static final BlockType TERRACOTTA = null;
+    @Nullable public static final BlockType TNT = null;
+    @Nullable public static final BlockType TORCH = null;
+    @Nullable public static final BlockType TRAPPED_CHEST = null;
+    @Nullable public static final BlockType TRIPWIRE = null;
+    @Nullable public static final BlockType TRIPWIRE_HOOK = null;
+    @Nullable public static final BlockType TUBE_CORAL = null;
+    @Nullable public static final BlockType TUBE_CORAL_BLOCK = null;
+    @Nullable public static final BlockType TUBE_CORAL_FAN = null;
+    @Nullable public static final BlockType TUBE_CORAL_WALL_FAN = null;
+    @Nullable public static final BlockType TURTLE_EGG = null;
+    @Nullable public static final BlockType VINE = null;
+    @Nullable public static final BlockType VOID_AIR = null;
+    @Nullable public static final BlockType WALL_SIGN = null;
+    @Nullable public static final BlockType WALL_TORCH = null;
+    @Nullable public static final BlockType WATER = null;
+    @Nullable public static final BlockType WET_SPONGE = null;
+    @Nullable public static final BlockType WHEAT = null;
+    @Nullable public static final BlockType WHITE_BANNER = null;
+    @Nullable public static final BlockType WHITE_BED = null;
+    @Nullable public static final BlockType WHITE_CARPET = null;
+    @Nullable public static final BlockType WHITE_CONCRETE = null;
+    @Nullable public static final BlockType WHITE_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType WHITE_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType WHITE_SHULKER_BOX = null;
+    @Nullable public static final BlockType WHITE_STAINED_GLASS = null;
+    @Nullable public static final BlockType WHITE_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType WHITE_TERRACOTTA = null;
+    @Nullable public static final BlockType WHITE_TULIP = null;
+    @Nullable public static final BlockType WHITE_WALL_BANNER = null;
+    @Nullable public static final BlockType WHITE_WOOL = null;
+    @Nullable public static final BlockType WITHER_SKELETON_SKULL = null;
+    @Nullable public static final BlockType WITHER_SKELETON_WALL_SKULL = null;
+    @Nullable public static final BlockType YELLOW_BANNER = null;
+    @Nullable public static final BlockType YELLOW_BED = null;
+    @Nullable public static final BlockType YELLOW_CARPET = null;
+    @Nullable public static final BlockType YELLOW_CONCRETE = null;
+    @Nullable public static final BlockType YELLOW_CONCRETE_POWDER = null;
+    @Nullable public static final BlockType YELLOW_GLAZED_TERRACOTTA = null;
+    @Nullable public static final BlockType YELLOW_SHULKER_BOX = null;
+    @Nullable public static final BlockType YELLOW_STAINED_GLASS = null;
+    @Nullable public static final BlockType YELLOW_STAINED_GLASS_PANE = null;
+    @Nullable public static final BlockType YELLOW_TERRACOTTA = null;
+    @Nullable public static final BlockType YELLOW_WALL_BANNER = null;
+    @Nullable public static final BlockType YELLOW_WOOL = null;
+    @Nullable public static final BlockType ZOMBIE_HEAD = null;
+    @Nullable public static final BlockType ZOMBIE_WALL_HEAD = null;
 
     /*
      -----------------------------------------------------
-                    Instance
+                    Settings
      -----------------------------------------------------
      */
-    private final static class Settings {
-        private final int internalId;
-        private final ItemTypes itemType;
-        private final BlockState defaultState;
-        private final AbstractProperty[] propertiesMapArr;
-        private final AbstractProperty[] propertiesArr;
-        private final List<AbstractProperty> propertiesList;
-        private final Map<String, AbstractProperty> propertiesMap;
-        private final Set<AbstractProperty> propertiesSet;
-        private final BlockMaterial blockMaterial;
-        private final int permutations;
-        private int[] stateOrdinals;
+    protected final static class Settings {
+        protected final int internalId;
+        protected final BlockState defaultState;
+        protected final AbstractProperty<?>[] propertiesMapArr;
+        protected final AbstractProperty<?>[] propertiesArr;
+        protected final List<AbstractProperty<?>> propertiesList;
+        protected final Map<String, AbstractProperty<?>> propertiesMap;
+        protected final Set<AbstractProperty<?>> propertiesSet;
+        protected final BlockMaterial blockMaterial;
+        protected final int permutations;
+        protected int[] stateOrdinals;
 
-        Settings(BlockTypes type, String id, int internalId, List<BlockState> states) {
+        Settings(BlockType type, String id, int internalId, List<BlockState> states) {
             this.internalId = internalId;
             String propertyString = null;
             int propI = id.indexOf('[');
@@ -691,7 +687,7 @@ public enum BlockTypes implements BlockType {
             }
 
             int maxInternalStateId = 0;
-            Map<String, ? extends Property> properties = WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.GAME_HOOKS).getRegistries().getBlockRegistry().getProperties(type);
+            Map<String, ? extends Property<?>> properties = WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.GAME_HOOKS).getRegistries().getBlockRegistry().getProperties(type);
             if (!properties.isEmpty()) {
                 // Ensure the properties are registered
                 int maxOrdinal = 0;
@@ -701,18 +697,18 @@ public enum BlockTypes implements BlockType {
                 this.propertiesMapArr = new AbstractProperty[maxOrdinal + 1];
                 int prop_arr_i = 0;
                 this.propertiesArr = new AbstractProperty[properties.size()];
-                HashMap<String, AbstractProperty> propMap = new HashMap<>();
+                HashMap<String, AbstractProperty<?>> propMap = new HashMap<>();
 
                 int bitOffset = 0;
-                for (Map.Entry<String, ? extends Property> entry : properties.entrySet()) {
+                for (Map.Entry<String, ? extends Property<?>> entry : properties.entrySet()) {
                     PropertyKey key = PropertyKey.getOrCreate(entry.getKey());
-                    AbstractProperty property = ((AbstractProperty) entry.getValue()).withOffset(bitOffset);
+                    AbstractProperty<?> property = ((AbstractProperty) entry.getValue()).withOffset(bitOffset);
                     this.propertiesMapArr[key.ordinal()] = property;
                     this.propertiesArr[prop_arr_i++] = property;
                     propMap.put(entry.getKey(), property);
-                    bitOffset += property.getNumBits();
 
                     maxInternalStateId += (property.getValues().size() << bitOffset);
+                    bitOffset += property.getNumBits();
                 }
                 this.propertiesList = Arrays.asList(this.propertiesArr);
                 this.propertiesMap = Collections.unmodifiableMap(propMap);
@@ -727,26 +723,28 @@ public enum BlockTypes implements BlockType {
             this.permutations = maxInternalStateId;
 
             this.blockMaterial = WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.GAME_HOOKS).getRegistries().getBlockRegistry().getMaterial(type);
-            this.itemType = ItemTypes.get(type);
 
             if (!propertiesList.isEmpty()) {
                 this.stateOrdinals = generateStateOrdinals(internalId, states.size(), maxInternalStateId, propertiesList);
+
                 for (int propId = 0; propId < this.stateOrdinals.length; propId++) {
                     int ordinal = this.stateOrdinals[propId];
                     if (ordinal != -1) {
                         int stateId = internalId + (propId << BlockTypes.BIT_OFFSET);
-                        states.add(new BlockStateImpl(type, stateId, ordinal));
+                        BlockState state = new BlockState(type, stateId, ordinal);
+                        states.add(state);
                     }
                 }
                 int defaultPropId = parseProperties(propertyString, propertiesMap) >> BlockTypes.BIT_OFFSET;
+
                 this.defaultState = states.get(this.stateOrdinals[defaultPropId]);
             } else {
-                this.defaultState = new BlockStateImpl(type, internalId, states.size());
+                this.defaultState = new BlockState(type, internalId, states.size());
                 states.add(this.defaultState);
             }
         }
 
-        private int parseProperties(String properties, Map<String, AbstractProperty> propertyMap) {
+        private int parseProperties(String properties, Map<String, AbstractProperty<?>> propertyMap) {
             int id = internalId;
             for (String keyPair : properties.split(",")) {
                 String[] split = keyPair.split("=");
@@ -759,37 +757,10 @@ public enum BlockTypes implements BlockType {
         }
     }
 
-    private final String id;
-    private final Settings settings;
 
-    BlockTypes() {
-        if (name().indexOf(':') == -1) id = "minecraft:" + name().toLowerCase();
-        else id = name().toLowerCase();
-        settings = null;
-    }
-
-    private void init(String id, int internalId, List<BlockState> states) {
-        try {
-            if (getId() == null) {
-                String name = (name().indexOf(':') == -1 ? "minecraft:" : "") + name().toLowerCase();
-                ReflectionUtils.setFailsafeFieldValue(BlockTypes.class.getDeclaredField("id"), this, name);
-            }
-            Settings settings = new Settings(this, id, internalId, states);
-            ReflectionUtils.setFailsafeFieldValue(BlockTypes.class.getDeclaredField("settings"), this, settings);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-    }
-
-    public BlockState withPropertyId(int propertyId) {
-        if (settings.stateOrdinals == null) return settings.defaultState;
-        return states[settings.stateOrdinals[propertyId]];
-    }
-
-    private static int[] generateStateOrdinals(int internalId, int ordinal, int maxStateId, List<AbstractProperty> props) {
+    private static int[] generateStateOrdinals(int internalId, int ordinal, int maxStateId, List<AbstractProperty<?>> props) {
         if (props.isEmpty()) return null;
-        int[] result = new int[maxStateId + 1];
+        int[] result = new int[maxStateId];
         Arrays.fill(result, -1);
         int[] state = new int[props.size()];
         int[] sizes = new int[props.size()];
@@ -817,290 +788,100 @@ public enum BlockTypes implements BlockType {
         return result;
     }
 
-    /**
-     * Slow
-     * @return collection of states
-     */
-    @Deprecated
-    public List<BlockState> getAllStates() {
-        if (settings.stateOrdinals == null) return Collections.singletonList(getDefaultState());
-        return IntStream.of(settings.stateOrdinals).filter(i -> i != -1).mapToObj(i -> states[i]).collect(Collectors.toList());
-    }
-
-    public BlockState getState(Map<Property<?>, Object> key) {
-        int id = getInternalId();
-        for (Map.Entry<Property<?>, Object> iter : key.entrySet()) {
-            Property<?> prop = iter.getKey();
-            Object value = iter.getValue();
-
-            /*
-             * TODO:
-             * This is likely wrong. The only place this seems to currently (Dec 23 2018)
-             * be invoked is via ForgeWorld, and value is a String when invoked there...
-             */
-            AbstractProperty btp = settings.propertiesMap.get(prop.getName());
-            checkArgument(btp != null, "%s has no property named %s", this, prop.getName());
-            id = btp.modify(id, btp.getValueFor((String)value));
-        }
-        return withStateId(id);
-    }
-
-    @Deprecated
-    public int getMaxStateId() {
-        return settings.permutations;
-    }
-
-    @Override
-    public boolean apply(Extent extent, Vector get, Vector set) throws WorldEditException {
-        return extent.setBlock(set, this.settings.defaultState);
-    }
-
-    public Mask toMask(Extent extent) {
-        return new SingleBlockTypeMask(extent, this);
-    }
-
-    /**
-     * Gets the ID of this block.
-     *
-     * @return The id
-     */
-    public String getId() {
-        return this.id;
-    }
-
-    /**
-     * Gets the name of this block, or the ID if the name cannot be found.
-     *
-     * @return The name, or ID
-     */
-    public String getName() {
-        BundledBlockData.BlockEntry entry = BundledBlockData.getInstance().findById(this.id);
-        if (entry == null) {
-            return getId();
-        } else {
-            return entry.localizedName;
-        }
-    }
-
-    @Deprecated
-    public BlockState withStateId(int internalStateId) {
-        return this.withPropertyId(internalStateId >> BlockTypes.BIT_OFFSET);
-    }
-
-    /**
-     * Properties string in the form property1=foo,prop2=bar
-     * @param properties
-     * @return
-     */
-    public BlockState withProperties(String properties) {
-        int id = getInternalId();
-        for (String keyPair : properties.split(",")) {
-            String[] split = keyPair.split("=");
-            String name = split[0];
-            String value = split[1];
-            AbstractProperty btp = settings.propertiesMap.get(name);
-            id = btp.modify(id, btp.getValueFor(value));
-        }
-        return withStateId(id);
-    }
-
-    /**
-     * Gets the properties of this BlockType in a key->property mapping.
-     *
-     * @return The properties map
-     */
-    @Deprecated
-    public Map<String, ? extends Property> getPropertyMap() {
-        return this.settings.propertiesMap;
-    }
-
-    /**
-     * Gets the properties of this BlockType.
-     *
-     * @return the properties
-     */
-    @Deprecated
-    public List<? extends Property> getProperties() {
-        return this.settings.propertiesList;
-    }
-
-    @Deprecated
-    public Set<? extends Property> getPropertiesSet() {
-        return this.settings.propertiesSet;
-    }
-
-    /**
-     * Gets a property by name.
-     *
-     * @param name The name
-     * @return The property
-     */
-    @Deprecated
-    public <V> Property<V> getProperty(String name) {
-        return this.settings.propertiesMap.get(name);
-    }
-
-    public boolean hasProperty(PropertyKey key) {
-        int ordinal = key.ordinal();
-        return this.settings.propertiesMapArr.length > ordinal ? this.settings.propertiesMapArr[ordinal] != null : false;
-    }
-
-    public <V> Property<V> getProperty(PropertyKey key) {
-        try {
-            return this.settings.propertiesMapArr[key.ordinal()];
-        } catch (IndexOutOfBoundsException ignore) {
-            return null;
-        }
-    }
-
-    /**
-     * Gets the default state of this block type.
-     *
-     * @return The default state
-     */
-    public BlockState getDefaultState() {
-        return this.settings.defaultState;
-    }
-
-    /**
-     * Gets whether this block type has an item representation.
-     *
-     * @return If it has an item
-     */
-    public boolean hasItemType() {
-        return getItemType() != null;
-    }
-
-    /**
-     * Gets the item representation of this block type, if it exists.
-     *
-     * @return The item representation
-     */
-    @Nullable
-    public ItemType getItemType() {
-        return settings.itemType;
-    }
-
-    /**
-     * Get the material for this BlockType.
-     *
-     * @return The material
-     */
-    public BlockMaterial getMaterial() {
-        return this.settings.blockMaterial;
-    }
-
-    /**
-     * The internal index of this type.
-     *
-     * This number is not necessarily consistent across restarts.
-     *
-     * @return internal id
-     */
-    public int getInternalId() {
-        return this.settings.internalId;
-    }
-
-    @Override
-    public String toString() {
-        return getId();
-    }
-
     /*
      -----------------------------------------------------
                     Static Initializer
      -----------------------------------------------------
      */
 
-    @Deprecated public static final int BIT_OFFSET; // Used internally
-    @Deprecated public static final int BIT_MASK; // Used internally
+    public static final int BIT_OFFSET; // Used internally
+    protected static final int BIT_MASK; // Used internally
 
-    private static final Map<String, BlockTypes> $REGISTRY = new HashMap<>();
-    private static int $LENGTH;
-    private static int $STATE_INDEX;
+    private static final Map<String, BlockType> $REGISTRY = new HashMap<>();
 
-    public static final BlockTypes[] values;
+    public static final BlockType[] values;
     public static final BlockState[] states;
 
     private static final Set<String> $NAMESPACES = new LinkedHashSet<String>();
 
     static {
         try {
+            ArrayList<BlockState> stateList = new ArrayList<>();
+
             Collection<String> blocks = WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.GAME_HOOKS).getRegistries().getBlockRegistry().registerBlocks();
             Map<String, String> blockMap = blocks.stream().collect(Collectors.toMap(item -> item.charAt(item.length() - 1) == ']' ? item.substring(0, item.indexOf('[')) : item, item -> item));
 
-            BlockTypes[] oldValues = BlockTypes.values();
-            $LENGTH = oldValues.length;
             int size = blockMap.size();
-            for (BlockTypes type : oldValues) {
-                if (!blockMap.containsKey(type.getId())) {
-                    type.init(type.getId(), 0, new ArrayList<>());
-                    if (type != __RESERVED__) Fawe.debug("Invalid block registered " + type.getId());
-                    size++;
-                }
-                if (type != __RESERVED__) {
-                    $REGISTRY.put(type.name().toLowerCase(), type);
-                }
-            }
-
+            for (Field field : BlockID.class.getDeclaredFields()) size = Math.max(field.getInt(null) + 1, size);
             BIT_OFFSET = MathMan.log2nlz(size);
             BIT_MASK = ((1 << BIT_OFFSET) - 1);
+            values = new BlockType[size];
 
-            LinkedHashSet<BlockTypes> newValues = new LinkedHashSet<>(Arrays.asList(oldValues));
-            ArrayList<BlockState> stateList = new ArrayList<>();
-            for (String block : blocks) {
-                BlockTypes registered = register(block, stateList);
-                if (!newValues.contains(registered)) newValues.add(registered);
+            // Register the statically declared ones first
+            Field[] oldFields = BlockID.class.getDeclaredFields();
+            for (Field field : oldFields) {
+                if (field.getType() == int.class) {
+                    int internalId = field.getInt(null);
+                    String id = "minecraft:" + field.getName().toLowerCase();
+                    String defaultState = blockMap.remove(id);
+                    if (defaultState == null) {
+                        if (internalId != 0) {
+                            System.out.println("Ignoring invalid block " + id);
+                            continue;
+                        }
+                        defaultState = id;
+                    }
+                    if (values[internalId] != null) {
+                        throw new IllegalStateException("Invalid duplicate id for " + field.getName());
+                    }
+                    BlockType type = register(defaultState, internalId, stateList);
+                    // Note: Throws IndexOutOfBoundsError if nothing is registered and blocksMap is empty
+                    values[internalId] = type;
+                }
             }
-            // Cache the values
-            values = newValues.toArray(new BlockTypes[newValues.size()]);
+
+            { // Register new blocks
+                int internalId = 1;
+                for (Map.Entry<String, String> entry : blockMap.entrySet()) {
+                    String id = entry.getKey();
+                    String defaultState = entry.getValue();
+                    // Skip already registered ids
+                    for (; values[internalId] != null; internalId++);
+                    BlockType type = register(defaultState, internalId, stateList);
+                    values[internalId] = type;
+                }
+            }
+
+            // Add to $Registry
+            for (BlockType type : values) {
+                $REGISTRY.put(type.getId().toLowerCase(), type);
+            }
             states = stateList.toArray(new BlockState[stateList.size()]);
+
         } catch (Throwable e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
 
-    public static BlockTypes parse(final String type) throws InputParseException {
-        final String inputLower = type.toLowerCase();
-        String input = inputLower;
-
-        if (!input.split("\\[", 2)[0].contains(":")) input = "minecraft:" + input;
-        BlockTypes result = $REGISTRY.get(input);
-        if (result != null) return result;
-
-        try {
-            BlockStateHolder block = LegacyMapper.getInstance().getBlockFromLegacy(input);
-            if (block != null) return block.getBlockType();
-        } catch (NumberFormatException e) {
-        } catch (IndexOutOfBoundsException e) {}
-
-        throw new SuggestInputParseException("Does not match a valid block type: " + inputLower, inputLower, () -> Stream.of(BlockTypes.values)
-            .filter(b -> b.getId().contains(inputLower))
-            .map(e1 -> e1.getId())
-            .collect(Collectors.toList())
-        );
-    }
-
-    private static BlockTypes register(final String id, List<BlockState> states) {
+    private static BlockType register(final String id, int internalId, List<BlockState> states) {
         // Get the enum name (remove namespace if minecraft:)
         int propStart = id.indexOf('[');
         String typeName = id.substring(0, propStart == -1 ? id.length() : propStart);
         String enumName = (typeName.startsWith("minecraft:") ? typeName.substring(10) : typeName).toUpperCase();
-        // Check existing
-        BlockTypes existing = null;
+        BlockType existing = new BlockType(id, internalId, states);
+
+
+        // Set field value
         try {
-            existing = valueOf(enumName.toUpperCase());
-        } catch (IllegalArgumentException ignore) {}
-        if (existing == null) {
-            Fawe.debug("Registering block " + enumName);
-            existing = ReflectionUtils.addEnum(BlockTypes.class, enumName);
+            Field field = BlockTypes.class.getDeclaredField(enumName);
+            ReflectionUtils.setFailsafeFieldValue(field, null, existing);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
         }
-        int internalId = existing.ordinal();
-        if (internalId == 0 && existing != __RESERVED__) {
-            internalId = $LENGTH++;
-        }
-        existing.init(id, internalId, states);
+
         // register states
         if (typeName.startsWith("minecraft:")) $REGISTRY.put(typeName.substring(10), existing);
         $REGISTRY.put(typeName, existing);
@@ -1109,34 +890,64 @@ public enum BlockTypes implements BlockType {
         return existing;
     }
 
+
+    /*
+     -----------------------------------------------------
+                    Parsing
+     -----------------------------------------------------
+     */
+
+    public static BlockType parse(final String type) throws InputParseException {
+        final String inputLower = type.toLowerCase();
+        String input = inputLower;
+
+        if (!input.split("\\[", 2)[0].contains(":")) input = "minecraft:" + input;
+        BlockType result = $REGISTRY.get(input);
+        if (result != null) return result;
+
+        try {
+            BlockStateHolder block = LegacyMapper.getInstance().getBlockFromLegacy(input);
+            if (block != null) return block.getBlockType();
+        } catch (NumberFormatException | IndexOutOfBoundsException e) {
+        }
+
+        throw new SuggestInputParseException("Does not match a valid block type: " + inputLower, inputLower, () -> Stream.of(BlockTypes.values)
+            .filter(b -> StringMan.blockStateMatches(inputLower, b.getId()))
+            .map(e1 -> e1.getId())
+            .sorted(StringMan.blockStateComparator(inputLower))
+            .collect(Collectors.toList())
+        );
+    }
+
     public static Set<String> getNameSpaces() {
         return $NAMESPACES;
     }
 
-    public static final @Nullable BlockTypes get(final String id) {
+    public static final @Nullable BlockType get(final String id) {
         return $REGISTRY.get(id);
     }
 
-    public static final @Nullable BlockTypes get(final CharSequence id) {
+    public static final @Nullable BlockType get(final CharSequence id) {
         return $REGISTRY.get(id);
     }
 
     @Deprecated
-    public static final BlockTypes get(final int ordinal) {
+    public static final BlockType get(final int ordinal) {
         return values[ordinal];
     }
 
     @Deprecated
-    public static final BlockTypes getFromStateId(final int internalStateId) {
+    public static final BlockType getFromStateId(final int internalStateId) {
         return values[internalStateId & BIT_MASK];
     }
 
     @Deprecated
-    public static final BlockTypes getFromStateOrdinal(final int internalStateOrdinal) {
+    public static final BlockType getFromStateOrdinal(final int internalStateOrdinal) {
         return states[internalStateOrdinal].getBlockType();
     }
 
     public static int size() {
         return values.length;
     }
+    
 }

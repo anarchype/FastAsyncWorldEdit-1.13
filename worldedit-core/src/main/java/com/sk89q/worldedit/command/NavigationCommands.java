@@ -19,6 +19,9 @@
 
 package com.sk89q.worldedit.command;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.sk89q.minecraft.util.commands.Logging.LogMode.POSITION;
+
 import com.boydti.fawe.FaweAPI;
 import com.boydti.fawe.config.BBC;
 import com.boydti.fawe.util.MathMan;
@@ -35,17 +38,12 @@ import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.util.command.parametric.Optional;
 import com.sk89q.worldedit.world.World;
 
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.sk89q.minecraft.util.commands.Logging.LogMode.POSITION;
-
 /**
  * Commands for moving the player around.
  */
 @Command(aliases = {}, desc = "Commands for moving the player around: [More Info](https://goo.gl/uQTUiT)")
 public class NavigationCommands {
 
-    @SuppressWarnings("unused")
     private final WorldEdit worldEdit;
 
     /**
@@ -59,11 +57,11 @@ public class NavigationCommands {
     }
 
     @Command(
-            aliases = {"unstuck", "!"},
-            usage = "",
-            desc = "Escape from being stuck inside a block",
-            min = 0,
-            max = 0
+        aliases = { "unstuck", "!" },
+        usage = "",
+        desc = "Escape from being stuck inside a block",
+        min = 0,
+        max = 0
     )
     @CommandPermissions("worldedit.navigation.unstuck")
     public void unstuck(Player player) throws WorldEditException {
@@ -135,7 +133,7 @@ public class NavigationCommands {
     )
     @CommandPermissions("worldedit.navigation.ceiling")
     @Logging(POSITION)
-    public void ceiling(Player player, LocalSession session, CommandContext args) throws WorldEditException {
+    public void ceiling(Player player, CommandContext args) throws WorldEditException {
 
         final int clearance = args.argsLength() > 0 ?
                 Math.max(0, args.getInteger(0)) : 0;
@@ -156,7 +154,7 @@ public class NavigationCommands {
             max = 0
     )
     @CommandPermissions("worldedit.navigation.thru.command")
-    public void thru(Player player, LocalSession session, CommandContext args) throws WorldEditException {
+    public void thru(Player player) throws WorldEditException {
         if (player.passThroughForwardWall(6)) {
             BBC.WHOOSH.send(player);
         } else {
@@ -167,8 +165,8 @@ public class NavigationCommands {
     @Command(
             aliases = {"jumpto", "j"},
             usage = "[world,x,y,z]",
-            desc = "Teleport to a location" +
-                    "Flags:\n" +
+            desc = "Teleport to a location\n" +
+                    "Flags:" +
                     "  -f forces the specified position to be used",
             flags = "f",
             min = 0,
@@ -208,7 +206,7 @@ public class NavigationCommands {
     )
     @CommandPermissions("worldedit.navigation.up")
     @Logging(POSITION)
-    public void up(Player player, LocalSession session, CommandContext args) throws WorldEditException {
+    public void up(Player player, CommandContext args) throws WorldEditException {
         final int distance = args.getInteger(0);
 
         final boolean alwaysGlass = getAlwaysGlass(args);

@@ -21,14 +21,16 @@
 
 package com.sk89q.worldedit.util;
 
-import com.google.common.collect.Lists;
 import com.sk89q.util.StringUtil;
 import com.sk89q.worldedit.LocalConfiguration;
 import com.sk89q.worldedit.LocalSession;
+import com.sk89q.worldedit.util.report.Unreported;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import com.sk89q.worldedit.world.item.ItemTypes;
 import com.sk89q.worldedit.world.registry.LegacyMapper;
 import com.sk89q.worldedit.world.snapshot.SnapshotRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,9 +43,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Simple LocalConfiguration that loads settings using
@@ -51,10 +50,10 @@ import java.util.stream.Collectors;
  */
 public class PropertiesConfiguration extends LocalConfiguration {
 
-    private static final Logger log = Logger.getLogger(PropertiesConfiguration.class.getCanonicalName());
+    @Unreported private static final Logger log = LoggerFactory.getLogger(PropertiesConfiguration.class);
 
-    protected Properties properties;
-    protected File path;
+    @Unreported protected Properties properties;
+    @Unreported protected File path;
 
     /**
      * Construct the object. The configuration isn't loaded yet.
@@ -73,19 +72,17 @@ public class PropertiesConfiguration extends LocalConfiguration {
             properties.load(stream);
         } catch (FileNotFoundException ignored) {
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed to read configuration", e);
+            log.warn("Failed to read configuration", e);
         }
 
         loadExtra();
 
         profile = getBool("profile", profile);
-
-        disallowedBlocks =
-            new HashSet<>(getStringSet("limits.disallowed-blocks", defaultDisallowedBlocks))
-            .stream().map(e -> BlockTypes.parse(e)).collect(Collectors.toSet());
+        traceUnflushedSessions = getBool("trace-unflushed-sessions", traceUnflushedSessions);
+        disallowedBlocks = getStringSet("disallowed-blocks", getDefaultDisallowedBlocks());
+        disallowedBlocksMask = null;
         allowedDataCycleBlocks =
-                new HashSet<>(getStringSet("limits.allowed-data-cycle-blocks", null))
-                .stream().map(e -> BlockTypes.parse(e)).collect(Collectors.toSet());
+                new HashSet<>(getStringSet("limits.allowed-data-cycle-blocks", null));
         defaultChangeLimit = getInt("default-max-changed-blocks", defaultChangeLimit);
         maxChangeLimit = getInt("max-changed-blocks", maxChangeLimit);
         defaultMaxPolygonalPoints = getInt("default-max-polygon-points", defaultMaxPolygonalPoints);
@@ -100,22 +97,33 @@ public class PropertiesConfiguration extends LocalConfiguration {
         logFile = getString("log-file", logFile);
         logFormat = getString("log-format", logFormat);
         registerHelp = getBool("register-help", registerHelp);
-        wandItem = ItemTypes.parse(getString("wand-item", wandItem.getId()));
+        wandItem = getString("wand-item", wandItem);
+        try {
+            wandItem = LegacyMapper.getInstance().getItemFromLegacy(Integer.parseInt(wandItem)).getId();
+        } catch (Throwable e) {
+        }
         superPickaxeDrop = getBool("super-pickaxe-drop-items", superPickaxeDrop);
         superPickaxeManyDrop = getBool("super-pickaxe-many-drop-items", superPickaxeManyDrop);
         noDoubleSlash = getBool("no-double-slash", noDoubleSlash);
         useInventory = getBool("use-inventory", useInventory);
         useInventoryOverride = getBool("use-inventory-override", useInventoryOverride);
         useInventoryCreativeOverride = getBool("use-inventory-creative-override", useInventoryCreativeOverride);
-        navigationWand = ItemTypes.parse(getString("navigation-wand.item", navigationWand.getId()));
+        navigationWand = getString("nav-wand-item", navigationWand);
+        try {
+            navigationWand = LegacyMapper.getInstance().getItemFromLegacy(Integer.parseInt(navigationWand)).getId();
+        } catch (Throwable e) {
+        }
         navigationWandMaxDistance = getInt("nav-wand-distance", navigationWandMaxDistance);
         navigationUseGlass = getBool("nav-use-glass", navigationUseGlass);
         scriptTimeout = getInt("scripting-timeout", scriptTimeout);
+        calculationTimeout = getInt("calculation-timeout", calculationTimeout);
+        maxCalculationTimeout = getInt("max-calculation-timeout", maxCalculationTimeout);
         saveDir = getString("schematic-save-dir", saveDir);
         scriptsDir = getString("craftscript-dir", scriptsDir);
         butcherDefaultRadius = getInt("butcher-default-radius", butcherDefaultRadius);
         butcherMaxRadius = getInt("butcher-max-radius", butcherMaxRadius);
         allowSymlinks = getBool("allow-symbolic-links", allowSymlinks);
+        serverSideCUI = getBool("server-side-cui", serverSideCUI);
 
         LocalSession.MAX_HISTORY_SIZE = Math.max(15, getInt("history-size", 15));
 
@@ -128,7 +136,7 @@ public class PropertiesConfiguration extends LocalConfiguration {
         try (OutputStream output = new FileOutputStream(path)) {
             properties.store(output, "Don't put comments; they get removed");
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed to write configuration", e);
+            log.warn("Failed to write configuration", e);
         }
     }
 

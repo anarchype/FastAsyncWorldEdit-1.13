@@ -44,25 +44,16 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.*;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.LocalSession;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.extent.MaskingExtent;
 import com.sk89q.worldedit.function.mask.Mask;
 import com.sk89q.worldedit.function.mask.Masks;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.request.Request;
-import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import com.thevoxelbox.voxelsniper.brush.IBrush;
 import com.thevoxelbox.voxelsniper.brush.SnipeBrush;
 import com.thevoxelbox.voxelsniper.brush.perform.PerformBrush;
 import com.thevoxelbox.voxelsniper.brush.perform.Performer;
-import com.thevoxelbox.voxelsniper.event.SniperMaterialChangedEvent;
-import com.thevoxelbox.voxelsniper.event.SniperReplaceMaterialChangedEvent;
-
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -72,8 +63,12 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.Action;
-import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.PluginManager;
+
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class Sniper {
     private VoxelSniper plugin;
@@ -94,7 +89,7 @@ public class Sniper {
     }
 
     public String getCurrentToolId() {
-        return getToolId((getPlayer().getItemInHand() != null) ? getPlayer().getItemInHand().getType() : null);
+        return getToolId((getPlayer().getInventory().getItemInMainHand() != null) ? getPlayer().getInventory().getItemInMainHand().getType() : null);
     }
 
     public String getToolId(Material itemInHand) {
@@ -169,17 +164,10 @@ public class Sniper {
         try {
             Player player = getPlayer();
             final FawePlayer<Player> fp = FawePlayer.wrap(player);
-            TaskManager.IMP.taskNow(new Runnable() {
-                @Override
-                public void run() {
-                    if (!fp.runAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            snipeOnCurrentThread(fp, action, itemInHand, clickedBlock, clickedFace, sniperTool, toolId);
-                        }
-                    }, false, true)) {
-                        BBC.WORLDEDIT_COMMAND_LIMIT.send(fp);
-                    }
+            TaskManager.IMP.taskNow(() -> {
+                if (!fp.runAction(
+                    () -> snipeOnCurrentThread(fp, action, itemInHand, clickedBlock, clickedFace, sniperTool, toolId), false, true)) {
+                    BBC.WORLDEDIT_COMMAND_LIMIT.send(fp);
                 }
             }, Fawe.isMainThread());
             return true;
@@ -660,9 +648,7 @@ public class Sniper {
         private IBrush instantiateBrush(Class<? extends IBrush> brush) {
             try {
                 return brush.newInstance();
-            } catch (InstantiationException e) {
-                return null;
-            } catch (IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException e) {
                 return null;
             }
         }

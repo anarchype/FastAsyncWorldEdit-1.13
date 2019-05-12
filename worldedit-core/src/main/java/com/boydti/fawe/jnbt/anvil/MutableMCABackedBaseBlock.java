@@ -2,7 +2,7 @@ package com.boydti.fawe.jnbt.anvil;
 
 import com.boydti.fawe.FaweCache;
 import com.sk89q.jnbt.CompoundTag;
-import com.sk89q.worldedit.blocks.BaseBlock;
+import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockState;
 import javax.annotation.Nullable;
 
@@ -12,8 +12,7 @@ import javax.annotation.Nullable;
 public class MutableMCABackedBaseBlock extends BaseBlock {
 
     private MCAChunk chunk;
-    private byte[] data;
-    private byte[] ids;
+    private int[] ids;
     private int index;
     private int x;
     private int y;
@@ -29,7 +28,6 @@ public class MutableMCABackedBaseBlock extends BaseBlock {
 
     public void setArrays(int layer) {
         ids = chunk.ids[layer];
-        data = chunk.data[layer];
     }
 
     public MCAChunk getChunk() {
@@ -79,11 +77,7 @@ public class MutableMCABackedBaseBlock extends BaseBlock {
         return chunk.getTile(x, y, z);
     }
 
-//    @Override
-//    public void setId(int id) {
-//        ids[index] = (byte) id;
-//        chunk.setModified();
-//    }
+
 //
 //    @Override
 //    public void setData(int value) {

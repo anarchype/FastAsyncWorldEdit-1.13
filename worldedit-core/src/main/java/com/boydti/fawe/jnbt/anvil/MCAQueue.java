@@ -16,8 +16,8 @@ import com.boydti.fawe.object.RunnableVal4;
 import com.boydti.fawe.object.collection.IterableThreadLocal;
 import com.boydti.fawe.util.MainUtil;
 import com.sk89q.jnbt.CompoundTag;
-import com.sk89q.worldedit.Vector;
-import com.sk89q.worldedit.world.biome.BaseBiome;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.world.biome.BiomeType;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -86,13 +86,13 @@ public class MCAQueue extends NMSMappedFaweQueue<FaweQueue, FaweChunk, FaweChunk
     }
 
     @Override
-    public int getBiome(FaweChunk faweChunk, int x, int z) {
+    public BiomeType getBiome(FaweChunk faweChunk, int x, int z) {
         if (faweChunk instanceof MCAChunk) {
-            return ((MCAChunk) faweChunk).getBiomeArray()[((z & 0xF) << 4 | x & 0xF)];
+            return ((MCAChunk) faweChunk).getBiomeType(x, z);
         } else if (parent != null) {
-            return parent.getBiomeId(x, z);
+            return parent.getBiomeType(x, z);
         } else {
-            return 0;
+            return null;
         }
     }
 
@@ -155,11 +155,11 @@ public class MCAQueue extends NMSMappedFaweQueue<FaweQueue, FaweChunk, FaweChunk
         return super.setMCA(mcaX, mcaZ, region, whileLocked, save, unload);
     }
 
-    public void pasteRegion(MCAQueue from, final RegionWrapper regionFrom, Vector offset) throws IOException {
+    public void pasteRegion(MCAQueue from, final RegionWrapper regionFrom, BlockVector3 offset) throws IOException {
         pasteRegion(from, regionFrom, offset, new NullAnvilHistory());
     }
 
-    public void pasteRegion(MCAQueue from, final RegionWrapper regionFrom, Vector offset, IAnvilHistory history) throws IOException {
+    public void pasteRegion(MCAQueue from, final RegionWrapper regionFrom, BlockVector3 offset, IAnvilHistory history) throws IOException {
         int oX = offset.getBlockX();
         int oZ = offset.getBlockZ();
         int oY = offset.getBlockY();
@@ -643,33 +643,13 @@ public class MCAQueue extends NMSMappedFaweQueue<FaweQueue, FaweChunk, FaweChunk
     }
 
     @Override
-    public boolean regenerateChunk(FaweQueue faweQueue, int x, int z, BaseBiome biome, Long seed) {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
-    @Override
-    public IntFaweChunk getPrevious(IntFaweChunk fs, FaweChunk sections, Map<?, ?> tiles, Collection<?>[] entities, Set<UUID> createdEntities, boolean all) throws Exception {
+    public boolean regenerateChunk(FaweQueue faweQueue, int x, int z, BiomeType biome, Long seed) {
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public FaweQueue getImpWorld() {
         return parent;
-    }
-
-    @Override
-    public void setHeightMap(FaweChunk chunk, byte[] heightMap) {
-        MCAChunk mca = (MCAChunk) chunk;
-        if (mca != null) {
-            int[] otherMap = mca.getHeightMapArray();
-            for (int i = 0; i < heightMap.length; i++) {
-                int newHeight = heightMap[i] & 0xFF;
-                int currentHeight = otherMap[i];
-                if (newHeight > currentHeight) {
-                    otherMap[i] = newHeight;
-                }
-            }
-        }
     }
 
     @Override

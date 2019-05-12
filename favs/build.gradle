@@ -1,6 +1,5 @@
-repositories {
-    maven {url "https://ci.athion.net/job/FAWE-WorldGuard-1.13/lastSuccessfulBuild/artifact/mvn"}
-}
+apply plugin: 'eclipse'
+apply plugin: 'maven'
 
 dependencies {
     compile project(':worldedit-bukkit')

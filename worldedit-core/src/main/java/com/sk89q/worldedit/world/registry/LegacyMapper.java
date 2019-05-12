@@ -19,42 +19,49 @@
 
 package com.sk89q.worldedit.world.registry;
 
+import com.github.intellectualsites.plotsquared.plot.object.LegacyPlotBlock;
+import com.github.intellectualsites.plotsquared.plot.object.PlotBlock;
+import com.github.intellectualsites.plotsquared.plot.object.StringPlotBlock;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.registry.state.PropertyKey;
+import com.sk89q.worldedit.WorldEdit;
+import com.sk89q.worldedit.extension.input.ParserContext;
+import com.sk89q.worldedit.math.Vector3;
+import com.sk89q.worldedit.util.gson.VectorAdapter;
+import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import com.sk89q.worldedit.world.item.ItemType;
 import com.sk89q.worldedit.world.item.ItemTypes;
-import com.sk89q.worldedit.extension.input.ParserContext;
-import com.sk89q.worldedit.util.gson.VectorAdapter;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import javax.annotation.Nullable;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class LegacyMapper {
 
-    private static final Logger log = Logger.getLogger(LegacyMapper.class.getCanonicalName());
+    private static final Logger log = LoggerFactory.getLogger(LegacyMapper.class);
     private static LegacyMapper INSTANCE;
 
     private final Int2ObjectArrayMap<Integer> blockStateToLegacyId4Data = new Int2ObjectArrayMap<>();
     private final Int2ObjectArrayMap<Integer> extraId4DataToStateId = new Int2ObjectArrayMap<>();
     private final int[] blockArr = new int[4096];
-    private final BiMap<Integer, ItemTypes> itemMap = HashBiMap.create();
+    private final BiMap<Integer, ItemType> itemMap = HashBiMap.create();
 
     /**
      * Create a new instance.
@@ -64,7 +71,7 @@ public class LegacyMapper {
             loadFromResource();
         } catch (Throwable e) {
             e.printStackTrace();
-            log.log(Level.WARNING, "Failed to load the built-in legacy id registry", e);
+            log.warn("Failed to load the built-in legacy id registry", e);
         }
     }
 
@@ -75,7 +82,7 @@ public class LegacyMapper {
      */
     private void loadFromResource() throws IOException {
         GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(Vector.class, new VectorAdapter());
+        gsonBuilder.registerTypeAdapter(Vector3.class, new VectorAdapter());
         Gson gson = gsonBuilder.disableHtmlEscaping().create();
         URL url = LegacyMapper.class.getResource("legacy.json");
         if (url == null) {
@@ -92,7 +99,8 @@ public class LegacyMapper {
         for (Map.Entry<String, String> blockEntry : dataFile.blocks.entrySet()) {
             try {
                 BlockStateHolder blockState = BlockState.get(null, blockEntry.getValue());
-                BlockTypes type = blockState.getBlockType();
+//            	BlockState blockState = WorldEdit.getInstance().getBlockFactory().parseFromInput(blockEntry.getValue(), parserContext).toImmutableState();
+                BlockType type = blockState.getBlockType();
                 if (type.hasProperty(PropertyKey.WATERLOGGED)) {
                     blockState = blockState.with(PropertyKey.WATERLOGGED, false);
                 }
@@ -102,7 +110,7 @@ public class LegacyMapper {
                 blockStateToLegacyId4Data.put(blockState.getInternalId(), (Integer) combinedId);
                 blockStateToLegacyId4Data.putIfAbsent(blockState.getInternalBlockTypeId(), combinedId);
             } catch (Exception e) {
-                log.fine("Unknown block: " + blockEntry.getValue());
+                log.warn("Unknown block: " + blockEntry.getValue());
             }
         }
         for (int id = 0; id < 256; id++) {
@@ -119,7 +127,7 @@ public class LegacyMapper {
             try {
                 itemMap.put(getCombinedId(itemEntry.getKey()), ItemTypes.get(itemEntry.getValue()));
             } catch (Exception e) {
-                log.fine("Unknown item: " + itemEntry.getValue());
+                log.warn("Unknown item: " + itemEntry.getValue());
             }
         }
     }
@@ -130,11 +138,11 @@ public class LegacyMapper {
     }
 
     @Nullable
-    public ItemTypes getItemFromLegacy(int legacyId) {
+    public ItemType getItemFromLegacy(int legacyId) {
         return itemMap.get(legacyId << 4);
     }
 
-    public ItemTypes getItemFromLegacy(String input) {
+    public ItemType getItemFromLegacy(String input) {
         if (input.startsWith("minecraft:")) input = input.substring(10);
         return itemMap.get(getCombinedId(input));
     }
@@ -145,7 +153,7 @@ public class LegacyMapper {
     }
 
     @Nullable
-    public ItemTypes getItemFromLegacy(int legacyId, int data) {
+    public ItemType getItemFromLegacy(int legacyId, int data) {
         return itemMap.get((legacyId << 4) + data);
     }
 
@@ -218,6 +226,29 @@ public class LegacyMapper {
         Integer combinedId = getLegacyCombined(blockState);
         return combinedId == null ? null : new int[] { combinedId >> 4, combinedId & 0xF };
     }
+    
+    public BaseBlock getBaseBlockFromPlotBlock(PlotBlock plotBlock) {
+    	if(plotBlock instanceof StringPlotBlock) {
+    		try {
+    			return BlockTypes.get(plotBlock.toString()).getDefaultState().toBaseBlock();
+    		}catch(Throwable failed) {
+    			log.error("Unable to convert StringPlotBlock " + plotBlock + " to BaseBlock!");
+    			failed.printStackTrace();
+    			return null;
+    		}
+    	}else if(plotBlock instanceof LegacyPlotBlock) {
+    		try {
+    			return BaseBlock.getState(((LegacyPlotBlock)plotBlock).getId(), ((LegacyPlotBlock)plotBlock).getData()).toBaseBlock();
+    		}catch(Throwable failed) {
+    			log.error("Unable to convert LegacyPlotBlock " + plotBlock + " to BaseBlock!");
+    			failed.printStackTrace();
+    			return null;
+    		}
+    	}else {
+			log.error("Unable to convert LegacyPlotBlock " + plotBlock + " to BaseBlock!");
+			return null;
+    	}
+    }
 
     public static LegacyMapper getInstance() {
         if (INSTANCE == null) {
@@ -226,7 +257,7 @@ public class LegacyMapper {
         return INSTANCE;
     }
 
-    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection", "unused"})
+    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
     private static class LegacyDataFile {
         private Map<String, String> blocks;
         private Map<String, String> items;

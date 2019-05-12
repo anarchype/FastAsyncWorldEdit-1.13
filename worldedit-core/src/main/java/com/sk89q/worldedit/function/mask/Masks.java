@@ -1,7 +1,9 @@
 package com.sk89q.worldedit.function.mask;
 
-import com.sk89q.worldedit.Vector;
-import com.sk89q.worldedit.Vector2D;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.sk89q.worldedit.math.BlockVector2;
+import com.sk89q.worldedit.math.BlockVector3;
 
 import javax.annotation.Nullable;
 
@@ -50,6 +52,7 @@ public final class Masks {
      * @param finalMask the mask
      * @return a new mask
      */
+//<<<<<<< HEAD
     public static Mask negate(final Mask finalMask) {
         return finalMask.inverse();
     }
@@ -70,7 +73,7 @@ public final class Masks {
         checkNotNull(mask);
         return new AbstractMask2D() {
             @Override
-            public boolean test(Vector2D vector) {
+            public boolean test(BlockVector2 vector) {
                 return !mask.test(vector);
             }
         };
@@ -85,8 +88,8 @@ public final class Masks {
     public static Mask asMask(final Mask2D mask) {
         return new AbstractMask() {
             @Override
-            public boolean test(Vector vector) {
-                return mask.test(vector.toVector2D());
+            public boolean test(BlockVector3 vector) {
+                return mask.test(vector.toBlockVector2());
             }
 
             @Nullable
@@ -99,12 +102,12 @@ public final class Masks {
 
     protected static class AlwaysTrue implements Mask, Mask2D {
         @Override
-        public boolean test(Vector vector) {
+        public boolean test(BlockVector3 vector) {
             return true;
         }
 
         @Override
-        public boolean test(Vector2D vector) {
+        public boolean test(BlockVector2 vector) {
             return true;
         }
 
@@ -127,12 +130,12 @@ public final class Masks {
 
     protected static class AlwaysFalse implements Mask, Mask2D {
         @Override
-        public boolean test(Vector vector) {
+        public boolean test(BlockVector3 vector) {
             return false;
         }
 
         @Override
-        public boolean test(Vector2D vector) {
+        public boolean test(BlockVector2 vector) {
             return false;
         }
 

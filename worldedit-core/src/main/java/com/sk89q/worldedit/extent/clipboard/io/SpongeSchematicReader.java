@@ -42,15 +42,17 @@ import com.sk89q.jnbt.NamedTag;
 import com.sk89q.jnbt.ShortTag;
 import com.sk89q.jnbt.StringTag;
 import com.sk89q.jnbt.Tag;
-import com.sk89q.worldedit.BlockVector;
-import com.sk89q.worldedit.Vector;
+import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
-import com.sk89q.worldedit.blocks.BaseBlock;
 import com.sk89q.worldedit.entity.BaseEntity;
+import com.sk89q.worldedit.world.biome.BiomeTypes;
+import com.sk89q.worldedit.world.block.BaseBlock;
+import com.sk89q.worldedit.extension.input.InputParseException;
 import com.sk89q.worldedit.extension.input.ParserContext;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.legacycompat.NBTCompatibilityHandler;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.world.block.BlockState;
@@ -59,6 +61,8 @@ import com.sk89q.worldedit.world.entity.EntityType;
 import com.sk89q.worldedit.world.entity.EntityTypes;
 import net.jpountz.lz4.LZ4BlockInputStream;
 import net.jpountz.lz4.LZ4BlockOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -69,7 +73,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -85,7 +88,7 @@ public class SpongeSchematicReader extends NBTSchematicReader {
         // If NBT Compat handlers are needed - add them here.
     }
 
-    private static final Logger log = Logger.getLogger(SpongeSchematicReader.class.getCanonicalName());
+    private static final Logger log = LoggerFactory.getLogger(SpongeSchematicReader.class);
     private final NBTInputStream inputStream;
 
     /**
@@ -107,17 +110,17 @@ public class SpongeSchematicReader extends NBTSchematicReader {
     public Clipboard read(UUID uuid) throws IOException {
         return readVersion1(uuid);
     }
-
+    
     private int width, height, length;
     private int offsetX, offsetY, offsetZ;
     private char[] palette;
-    private Vector min;
+    private BlockVector3 min;
     private FaweClipboard fc;
 
     private FaweClipboard setupClipboard(int size, UUID uuid) {
         if (fc != null) {
             if (fc.getDimensions().getX() == 0) {
-                fc.setDimensions(new Vector(size, 1, 1));
+                fc.setDimensions(BlockVector3.at(size, 1, 1));
             }
             return fc;
         }
@@ -129,11 +132,11 @@ public class SpongeSchematicReader extends NBTSchematicReader {
             return fc = new MemoryOptimizedClipboard(size, 1, 1);
         }
     }
-
+    
     private Clipboard readVersion1(UUID uuid) throws IOException {
         width = height = length = offsetX = offsetY = offsetZ = Integer.MIN_VALUE;
 
-        final BlockArrayClipboard clipboard = new BlockArrayClipboard(new CuboidRegion(new Vector(0, 0, 0), new Vector(0, 0, 0)), fc);
+        final BlockArrayClipboard clipboard = new BlockArrayClipboard(new CuboidRegion(BlockVector3.at(0, 0, 0), BlockVector3.at(0, 0, 0)), fc);
         FastByteArrayOutputStream blocksOut = new FastByteArrayOutputStream();
         FastByteArrayOutputStream biomesOut = new FastByteArrayOutputStream();
 
@@ -141,7 +144,7 @@ public class SpongeSchematicReader extends NBTSchematicReader {
         streamer.addReader("Schematic.Width", (BiConsumer<Integer, Short>) (i, v) -> width = v);
         streamer.addReader("Schematic.Height", (BiConsumer<Integer, Short>) (i, v) -> height = v);
         streamer.addReader("Schematic.Length", (BiConsumer<Integer, Short>) (i, v) -> length = v);
-        streamer.addReader("Schematic.Offset", (BiConsumer<Integer, int[]>) (i, v) -> min = new BlockVector(v[0], v[1], v[2]));
+        streamer.addReader("Schematic.Offset", (BiConsumer<Integer, int[]>) (i, v) -> min = BlockVector3.at(v[0], v[1], v[2]));
         streamer.addReader("Schematic.Metadata.WEOffsetX", (BiConsumer<Integer, Integer>) (i, v) -> offsetX = v);
         streamer.addReader("Schematic.Metadata.WEOffsetY", (BiConsumer<Integer, Integer>) (i, v) -> offsetY = v);
         streamer.addReader("Schematic.Metadata.WEOffsetZ", (BiConsumer<Integer, Integer>) (i, v) -> offsetZ = v);
@@ -210,15 +213,13 @@ public class SpongeSchematicReader extends NBTSchematicReader {
         });
         streamer.readFully();
         if (fc == null) setupClipboard(length * width * height, uuid);
-        else fc.setDimensions(new Vector(width, height, length));
-        Vector origin = min;
+        fc.setDimensions(BlockVector3.at(width, height, length));
+        BlockVector3 origin = min;
         CuboidRegion region;
         if (offsetX != Integer.MIN_VALUE && offsetY != Integer.MIN_VALUE  && offsetZ != Integer.MIN_VALUE) {
-            origin = origin.subtract(new Vector(offsetX, offsetY, offsetZ));
-            region = new CuboidRegion(min, min.add(width, height, length).subtract(Vector.ONE));
-        } else {
-            region = new CuboidRegion(min, min.add(width, height, length).subtract(Vector.ONE));
+            origin = origin.subtract(BlockVector3.at(offsetX, offsetY, offsetZ));
         }
+        region = new CuboidRegion(min, min.add(width, height, length).subtract(BlockVector3.ONE));
         if (blocksOut.getSize() != 0) {
             try (FaweInputStream fis = new FaweInputStream(new LZ4BlockInputStream(new FastByteArraysInputStream(blocksOut.toByteArrays())))) {
                 int volume = width * height * length;
@@ -239,7 +240,7 @@ public class SpongeSchematicReader extends NBTSchematicReader {
             try (FaweInputStream fis = new FaweInputStream(new LZ4BlockInputStream(new FastByteArraysInputStream(biomesOut.toByteArrays())))) {
                 int volume = width * length;
                 for (int index = 0; index < volume; index++) {
-                    fc.setBiome(index, fis.read());
+                    fc.setBiome(index, BiomeTypes.get(fis.read()));
                 }
             }
         }
@@ -247,6 +248,7 @@ public class SpongeSchematicReader extends NBTSchematicReader {
         clipboard.setOrigin(origin);
         return clipboard;
     }
+
 
     @Override
     public void close() throws IOException {

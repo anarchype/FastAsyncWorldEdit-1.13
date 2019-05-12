@@ -6,6 +6,9 @@ import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.extension.platform.Platform;
+import com.sk89q.worldedit.MaxChangedBlocksException;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
 
@@ -30,7 +33,7 @@ public class AreaPickaxe implements BlockTool {
         int ox = clicked.getBlockX();
         int oy = clicked.getBlockY();
         int oz = clicked.getBlockZ();
-        BlockType initialType = clicked.getExtent().getBlock(clicked.toVector()).getBlockType();
+        BlockType initialType = clicked.getExtent().getBlock(clicked.toBlockPoint()).getBlockType();
 
         if (initialType.getMaterial().isAir()) {
             return true;
@@ -40,24 +43,24 @@ public class AreaPickaxe implements BlockTool {
             return true;
         }
 
-        EditSession editSession = session.createEditSession(player);
-        editSession.getSurvivalExtent().setToolUse(config.superPickaxeManyDrop);
-
-        for (int x = ox - range; x <= ox + range; ++x) {
-            for (int z = oz - range; z <= oz + range; ++z) {
-                for (int y = oy + range; y >= oy - range; --y) {
-                    if (initialType.equals(editSession.getLazyBlock(x, y, z))) {
-                        continue;
+        try (EditSession editSession = session.createEditSession(player)) {
+            try {
+                editSession.getSurvivalExtent().setToolUse(config.superPickaxeManyDrop);
+                for (int x = ox - range; x <= ox + range; ++x) {
+                    for (int z = oz - range; z <= oz + range; ++z) {
+                        for (int y = oy + range; y >= oy - range; --y) {
+                            if (initialType.equals(editSession.getLazyBlock(x, y, z))) {
+                                continue;
+                            }
+                            editSession.setBlock(x, y, z, BlockTypes.AIR.getDefaultState());
+                        }
                     }
-                    editSession.setBlock(x, y, z, BlockTypes.AIR.getDefaultState());
                 }
+                editSession.flushQueue();
+            } finally {
+                session.remember(editSession);
             }
         }
-        editSession.flushQueue();
-        session.remember(editSession);
-
         return true;
     }
-
-
 }

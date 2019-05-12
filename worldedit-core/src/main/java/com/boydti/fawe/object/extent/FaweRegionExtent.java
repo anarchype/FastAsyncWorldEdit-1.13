@@ -4,17 +4,17 @@ import com.boydti.fawe.config.BBC;
 import com.boydti.fawe.object.FaweLimit;
 import com.boydti.fawe.util.WEManager;
 import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.Vector;
-import com.sk89q.worldedit.Vector2D;
 import com.sk89q.worldedit.WorldEditException;
-import com.sk89q.worldedit.blocks.BaseBlock;
+import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.entity.BaseEntity;
 import com.sk89q.worldedit.entity.Entity;
 import com.sk89q.worldedit.extent.Extent;
+import com.sk89q.worldedit.math.BlockVector2;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.util.Location;
-import com.sk89q.worldedit.world.biome.BaseBiome;
+import com.sk89q.worldedit.world.biome.BiomeType;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
 
 import java.util.Collection;
@@ -48,16 +48,16 @@ public abstract class FaweRegionExtent extends ResettableExtent {
         return false;
     }
 
-    public final boolean contains(Vector p) {
+    public final boolean contains(BlockVector3 p) {
         return contains(p.getBlockX(), p.getBlockY(), p.getBlockZ());
     }
 
-    public final boolean contains(Vector2D p) {
+    public final boolean contains(BlockVector2 p) {
         return contains(p.getBlockX(), p.getBlockZ());
     }
 
     @Override
-    public boolean setBlock(Vector location, BlockStateHolder block) throws WorldEditException {
+    public <B extends BlockStateHolder<B>> boolean setBlock(BlockVector3 location, B block) throws WorldEditException {
         if (!contains(location)) {
             if (!limit.MAX_FAILS()) {
                 WEManager.IMP.cancelEditSafe(this, BBC.WORLDEDIT_CANCEL_REASON_OUTSIDE_REGION);
@@ -68,7 +68,7 @@ public abstract class FaweRegionExtent extends ResettableExtent {
     }
 
     @Override
-    public boolean setBlock(int x, int y, int z, BlockStateHolder block) throws WorldEditException {
+    public <B extends BlockStateHolder<B>> boolean setBlock(int x, int y, int z, B block) throws WorldEditException {
         if (!contains(x, y, z)) {
             if (!limit.MAX_FAILS()) {
                 WEManager.IMP.cancelEditSafe(this, BBC.WORLDEDIT_CANCEL_REASON_OUTSIDE_REGION);
@@ -79,7 +79,7 @@ public abstract class FaweRegionExtent extends ResettableExtent {
     }
 
     @Override
-    public boolean setBiome(Vector2D position, BaseBiome biome) {
+    public boolean setBiome(BlockVector2 position, BiomeType biome) {
         if (!contains(position)) {
             if (!limit.MAX_FAILS()) {
                 WEManager.IMP.cancelEditSafe(this, BBC.WORLDEDIT_CANCEL_REASON_OUTSIDE_REGION);
@@ -90,7 +90,7 @@ public abstract class FaweRegionExtent extends ResettableExtent {
     }
 
     @Override
-    public boolean setBiome(int x, int y, int z, BaseBiome biome) {
+    public boolean setBiome(int x, int y, int z, BiomeType biome) {
         if (!contains(x, y, z)) {
             if (!limit.MAX_FAILS()) {
                 WEManager.IMP.cancelEditSafe(this, BBC.WORLDEDIT_CANCEL_REASON_OUTSIDE_REGION);
@@ -101,18 +101,29 @@ public abstract class FaweRegionExtent extends ResettableExtent {
     }
 
     @Override
-    public BaseBiome getBiome(Vector2D position) {
+    public BiomeType getBiome(BlockVector2 position) {
         if (!contains(position)) {
             if (!limit.MAX_FAILS()) {
                 WEManager.IMP.cancelEditSafe(this, BBC.WORLDEDIT_CANCEL_REASON_OUTSIDE_REGION);
             }
-            return EditSession.nullBiome;
+            return null;
         }
         return super.getBiome(position);
     }
+    
+    @Override
+    public BaseBlock getFullBlock(BlockVector3 position) {
+        if (!contains(position)) {
+            if (!limit.MAX_FAILS()) {
+                WEManager.IMP.cancelEditSafe(this, BBC.WORLDEDIT_CANCEL_REASON_OUTSIDE_REGION);
+            }
+            return EditSession.nullBlock.toBaseBlock();
+        }
+        return super.getFullBlock(position);
+    }
 
     @Override
-    public BlockState getBlock(Vector position) {
+    public BlockState getBlock(BlockVector3 position) {
         if (!contains(position)) {
             if (!limit.MAX_FAILS()) {
                 WEManager.IMP.cancelEditSafe(this, BBC.WORLDEDIT_CANCEL_REASON_OUTSIDE_REGION);
@@ -123,7 +134,7 @@ public abstract class FaweRegionExtent extends ResettableExtent {
     }
 
     @Override
-    public BlockState getLazyBlock(Vector position) {
+    public BlockState getLazyBlock(BlockVector3 position) {
         if (!contains(position)) {
             if (!limit.MAX_FAILS()) {
                 WEManager.IMP.cancelEditSafe(this, BBC.WORLDEDIT_CANCEL_REASON_OUTSIDE_REGION);

@@ -15,17 +15,20 @@ FAWE is a fork of WorldEdit that has huge speed and memory improvements and cons
 
 ## Downloads
 ### 1.13+
-* [Download](https://empcraft.com/fawe/download/?bukkit113)
-* [Jenkins](https://ci.athion.net/job/FAWE-1.13/)
+* [Download](https://empcraft.com/fawe/download/)
+* [Jenkins](https://ci.athion.net/job/FastAsyncWorldEdit-Breaking/)
+* [JavaDoc](https://ci.athion.net/job/FastAsyncWorldEdit-1.13/javadoc/)
 
-### <1.12.2
+### < 1.12.2
 * [Download](https://empcraft.com/fawe/download/?bukkit)
 * [Jenkins](https://ci.athion.net/job/FastAsyncWorldEdit/)
 * [Repository](https://github.com/boy0001/FastAsyncWorldedit)
+* [JavaDoc](https://ci.athion.net/job/FastAsyncWorldEdit/javadoc/)
 
 
 ## Building
-FAWE uses gradle to build
+FAWE uses gradle to build  
+You can safely ignore `gradlew setupDecompWorkspace` if you are not planning to work on the forge side of FAWE.
 
 ```
 $ gradlew setupDecompWorkspace

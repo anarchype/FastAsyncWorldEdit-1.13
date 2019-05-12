@@ -1,5 +1,6 @@
 package com.sk89q.worldedit.util.command.parametric;
 
+import com.boydti.fawe.config.BBC;
 import com.boydti.fawe.util.StringMan;
 import com.google.common.primitives.Chars;
 import com.sk89q.minecraft.util.commands.*;
@@ -15,9 +16,9 @@ public class FunctionParametricCallable extends AParametricCallable {
 
     private final ParametricBuilder builder;
     private final ParameterData[] parameters;
-    private final Set<Character> valueFlags = new HashSet<Character>();
+    private final Set<Character> valueFlags = new HashSet<>();
     private final boolean anyFlags;
-    private final Set<Character> legacyFlags = new HashSet<Character>();
+    private final Set<Character> legacyFlags = new HashSet<>();
     private final SimpleDescription description = new SimpleDescription();
     private final String permission;
     private final Command command;
@@ -33,10 +34,8 @@ public class FunctionParametricCallable extends AParametricCallable {
 
         List<Object[]> paramParsables = new ArrayList<>();
         {
-            Map<Type, Binding> bindings = builder.getBindings();
             Map<String, Type> unqualified = new HashMap<>();
-            for (Map.Entry<Type, Binding> entry : bindings.entrySet()) {
-                Type type = entry.getKey();
+            for (Type type : builder.getBindings().getTypes()) {
                 String typeStr = type.getTypeName();
                 unqualified.put(typeStr, type);
                 unqualified.put(typeStr.substring(typeStr.lastIndexOf('.') + 1), type);
@@ -81,7 +80,7 @@ public class FunctionParametricCallable extends AParametricCallable {
         }
 
         parameters = new ParameterData[paramParsables.size()];
-        List<Parameter> userParameters = new ArrayList<Parameter>();
+        List<Parameter> userParameters = new ArrayList<>();
 
         // This helps keep tracks of @Nullables that appear in the middle of a list
         // of parameters
@@ -117,7 +116,7 @@ public class FunctionParametricCallable extends AParametricCallable {
 
             // No special @annotation binding... let's check for the type
             if (parameter.getBinding() == null) {
-                parameter.setBinding(builder.getBindings().get(type));
+                parameter.setBinding(builder.getBindings());
 
                 // Don't know how to parse for this type of value
                 if (parameter.getBinding() == null) {
@@ -278,14 +277,14 @@ public class FunctionParametricCallable extends AParametricCallable {
             }
             return result;
         } catch (MissingParameterException e) {
-            throw new InvalidUsageException("Too few parameters!", this, true);
+            throw new InvalidUsageException(BBC.getPrefix() + "Too few parameters!", this, true);
         } catch (UnconsumedParameterException e) {
-            throw new InvalidUsageException("Too many parameters! Unused parameters: " + e.getUnconsumed(), this, true);
+            throw new InvalidUsageException(BBC.getPrefix() + "Too many parameters! Unused parameters: " + e.getUnconsumed(), this, true);
         } catch (ParameterException e) {
             assert parameter != null;
             String name = parameter.getName();
 
-            throw new InvalidUsageException("For parameter '" + name + "': " + e.getMessage(), this, true);
+            throw new InvalidUsageException(BBC.getPrefix() + "For parameter '" + name + "': " + e.getMessage(), this, true);
         } catch (InvocationTargetException e) {
             if (e.getCause() instanceof CommandException) {
                 throw (CommandException) e.getCause();

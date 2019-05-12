@@ -18,7 +18,7 @@
 //import com.sk89q.jnbt.StringTag;
 //import com.sk89q.jnbt.Tag;
 //import com.sk89q.worldedit.blocks.BaseBlock;
-import com.sk89q.worldedit.world.block.BlockState;
+//import com.sk89q.worldedit.world.block.BlockState;
 //import com.sk89q.worldedit.bukkit.adapter.BukkitImplAdapter;
 //import com.sk89q.worldedit.entity.BaseEntity;
 //import com.sk89q.worldedit.internal.Constants;
@@ -352,7 +352,7 @@ import com.sk89q.worldedit.world.block.BlockState;
 //    }
 //
 //    @Override
-//    public int getBiomeId(Biome biome) {
+//    public BiomeType getBiomeType(Biome biome) {
 //        try {
 //            Object biomeBase = biomeToBiomeBase.invoke(null, biome);
 //            if (biomeBase != null) return (int) biomeBaseToTypeId.invoke(null, biomeBase);

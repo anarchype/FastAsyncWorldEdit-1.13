@@ -13,22 +13,22 @@ import com.boydti.fawe.object.exception.FaweException;
 import com.boydti.fawe.util.SetQueue;
 import com.sk89q.jnbt.CompoundTag;
 import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.Vector;
-import com.sk89q.worldedit.Vector2D;
 import com.sk89q.worldedit.WorldEditException;
-import com.sk89q.worldedit.blocks.BaseBlock;
+import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.entity.BaseEntity;
 import com.sk89q.worldedit.entity.Entity;
 import com.sk89q.worldedit.function.mask.Mask;
 import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.pattern.Pattern;
+import com.sk89q.worldedit.math.BlockVector2;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.world.World;
-import com.sk89q.worldedit.world.biome.BaseBiome;
+import com.sk89q.worldedit.world.biome.BiomeType;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
 import java.io.File;
 import java.util.Collection;
@@ -51,12 +51,12 @@ public interface IDelegateFaweQueue extends FaweQueue {
     }
 
     @Override
-    default Vector getMinimumPoint() {
+    default BlockVector3 getMinimumPoint() {
         return getQueue().getMinimumPoint();
     }
 
     @Override
-    default Vector getMaximumPoint() {
+    default BlockVector3 getMaximumPoint() {
         return getQueue().getMaximumPoint();
     }
 
@@ -66,27 +66,27 @@ public interface IDelegateFaweQueue extends FaweQueue {
     }
 
     @Override
-    default boolean setBlock(int x, int y, int z, BlockStateHolder block) throws WorldEditException {
+    default <B extends BlockStateHolder<B>> boolean setBlock(int x, int y, int z, B block) throws WorldEditException {
         return getQueue().setBlock(x, y, z, block);
     }
 
     @Override
-    default BlockState getBlock(Vector position) {
+    default BlockState getBlock(BlockVector3 position) {
         return getQueue().getBlock(position);
     }
 
     @Override
-    default BaseBiome getBiome(Vector2D position) {
+    default BiomeType getBiome(BlockVector2 position) {
         return getQueue().getBiome(position);
     }
 
     @Override
-    default boolean setBlock(Vector position, BlockStateHolder block) throws WorldEditException {
+    default <B extends BlockStateHolder<B>> boolean setBlock(BlockVector3 position, B block) throws WorldEditException {
         return getQueue().setBlock(position, block);
     }
 
     @Override
-    default boolean setBiome(Vector2D position, BaseBiome biome) {
+    default boolean setBiome(BlockVector2 position, BiomeType biome) {
         return getQueue().setBiome(position, biome);
     }
 
@@ -146,7 +146,7 @@ public interface IDelegateFaweQueue extends FaweQueue {
     }
 
     @Override
-    default boolean setBiome(int x, int z, BaseBiome biome) {
+    default boolean setBiome(int x, int z, BiomeType biome) {
         return getQueue().setBiome(x, z, biome);
     }
 
@@ -261,12 +261,12 @@ public interface IDelegateFaweQueue extends FaweQueue {
     }
 
     @Override
-    default void forEachBlockInChunk(int cx, int cz, RunnableVal2<Vector, BlockState> onEach) {
+    default void forEachBlockInChunk(int cx, int cz, RunnableVal2<BlockVector3, BaseBlock> onEach) {
         getQueue().forEachBlockInChunk(cx, cz, onEach);
     }
 
     @Override
-    default void forEachTileInChunk(int cx, int cz, RunnableVal2<Vector, BlockState> onEach) {
+    default void forEachTileInChunk(int cx, int cz, RunnableVal2<BlockVector3, BaseBlock> onEach) {
         getQueue().forEachTileInChunk(cx, cz, onEach);
     }
 
@@ -277,7 +277,7 @@ public interface IDelegateFaweQueue extends FaweQueue {
     }
 
     @Override
-    default boolean regenerateChunk(int x, int z, @Nullable BaseBiome biome, @Nullable Long seed) {
+    default boolean regenerateChunk(int x, int z, @Nullable BiomeType biome, @Nullable Long seed) {
         return getQueue().regenerateChunk(x, z, biome, seed);
     }
 
@@ -333,18 +333,13 @@ public interface IDelegateFaweQueue extends FaweQueue {
     }
 
     @Override
-    default void addNotifyTask(int x, int z, Runnable runnable) {
-        getQueue().addNotifyTask(x, z, runnable);
-    }
-
-    @Override
     default boolean hasBlock(int x, int y, int z) throws FaweException.FaweChunkLoadException {
         return getQueue().hasBlock(x, y, z);
     }
 
     @Override
-    default int getBiomeId(int x, int z) throws FaweException.FaweChunkLoadException {
-        return getQueue().getBiomeId(x, z);
+    default BiomeType getBiomeType(int x, int z) throws FaweException.FaweChunkLoadException {
+        return getQueue().getBiomeType(x, z);
     }
 
     @Override
@@ -459,7 +454,7 @@ public interface IDelegateFaweQueue extends FaweQueue {
     }
 
     @Override
-    default BlockState getLazyBlock(Vector position) {
+    default BlockState getLazyBlock(BlockVector3 position) {
         return getQueue().getLazyBlock(position);
     }
 

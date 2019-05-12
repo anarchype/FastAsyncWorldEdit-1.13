@@ -4,7 +4,6 @@ import com.boydti.fawe.object.mask.IdMask;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.LocalConfiguration;
 import com.sk89q.worldedit.LocalSession;
-import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.extension.platform.Platform;
@@ -12,8 +11,10 @@ import com.sk89q.worldedit.function.block.BlockReplace;
 import com.sk89q.worldedit.function.mask.Mask;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.function.visitor.RecursiveVisitor;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
+import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
 
 /**
@@ -35,9 +36,11 @@ public class RecursivePickaxe implements BlockTool {
     @Override
     public boolean actPrimary(Platform server, LocalConfiguration config, Player player, LocalSession session, com.sk89q.worldedit.util.Location clicked) {
         World world = (World) clicked.getExtent();
-        final Vector pos = clicked.toVector();
+        final BlockVector3 pos = clicked.toBlockPoint();
 
         EditSession editSession = session.createEditSession(player);
+        BlockVector3 origin = clicked.toBlockPoint();
+        BlockType initialType = world.getBlock(origin).getBlockType();
 
         BlockStateHolder block = editSession.getBlock(pos);
         if (block.getBlockType().getMaterial().isAir()) {
@@ -59,9 +62,6 @@ public class RecursivePickaxe implements BlockTool {
 
         editSession.flushQueue();
         session.remember(editSession);
-
         return true;
     }
-
-
 }

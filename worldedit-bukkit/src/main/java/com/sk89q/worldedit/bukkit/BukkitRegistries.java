@@ -19,7 +19,13 @@
 
 package com.sk89q.worldedit.bukkit;
 
-import com.sk89q.worldedit.world.registry.*;
+import com.sk89q.worldedit.world.registry.BiomeRegistry;
+import com.sk89q.worldedit.world.registry.BlockCategoryRegistry;
+import com.sk89q.worldedit.world.registry.BlockRegistry;
+import com.sk89q.worldedit.world.registry.BundledRegistries;
+import com.sk89q.worldedit.world.registry.EntityRegistry;
+import com.sk89q.worldedit.world.registry.ItemCategoryRegistry;
+import com.sk89q.worldedit.world.registry.ItemRegistry;
 
 /**
  * World data for the Bukkit platform.
@@ -31,6 +37,8 @@ class BukkitRegistries extends BundledRegistries {
     private final ItemRegistry itemRegistry = new BukkitItemRegistry();
     private final BiomeRegistry biomeRegistry = new BukkitBiomeRegistry();
     private final EntityRegistry entityRegistry = new BukkitEntityRegistry();
+    private final BlockCategoryRegistry blockCategoryRegistry = new BukkitBlockCategoryRegistry();
+    private final ItemCategoryRegistry itemCategoryRegistry = new BukkitItemCategoryRegistry();
 
     /**
      * Create a new instance.
@@ -51,6 +59,16 @@ class BukkitRegistries extends BundledRegistries {
     @Override
     public ItemRegistry getItemRegistry() {
         return itemRegistry;
+    }
+
+    @Override
+    public BlockCategoryRegistry getBlockCategoryRegistry() {
+        return blockCategoryRegistry;
+    }
+    
+    @Override
+    public ItemCategoryRegistry getItemCategoryRegistry() {
+    	return itemCategoryRegistry;
     }
 
     @Override

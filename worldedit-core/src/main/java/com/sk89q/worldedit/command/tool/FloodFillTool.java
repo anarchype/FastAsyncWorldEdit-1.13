@@ -19,11 +19,21 @@
 
 package com.sk89q.worldedit.command.tool;
 
-import com.sk89q.worldedit.*;
+import com.boydti.fawe.object.mask.IdMask;
+import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.LocalConfiguration;
+import com.sk89q.worldedit.LocalSession;
+import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.extension.platform.Platform;
+import com.sk89q.worldedit.function.block.BlockReplace;
+import com.sk89q.worldedit.function.mask.BlockTypeMask;
+import com.sk89q.worldedit.function.mask.Mask;
+import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.function.pattern.Pattern;
+import com.sk89q.worldedit.function.visitor.RecursiveVisitor;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.block.BlockType;
@@ -54,7 +64,8 @@ public class FloodFillTool implements BlockTool {
     public boolean actPrimary(Platform server, LocalConfiguration config, Player player, LocalSession session, Location clicked) {
         World world = (World) clicked.getExtent();
 
-        BlockType initialType = world.getBlockType(clicked.toVector());
+        BlockVector3 origin = clicked.toBlockPoint();
+        BlockType initialType = world.getBlock(origin).getBlockType();
 
         if (initialType.getMaterial().isAir()) {
             return true;
@@ -64,21 +75,24 @@ public class FloodFillTool implements BlockTool {
             return true;
         }
 
-        EditSession editSession = session.createEditSession(player);
-
-        try {
-            recurse(editSession, clicked.toVector().toBlockVector(),
-                    clicked.toVector(), range, initialType, new HashSet<BlockVector>());
-        } catch (WorldEditException e) {
-            throw new RuntimeException(e);
+        try (EditSession editSession = session.createEditSession(player)) {
+            try {
+                Mask mask = initialType.toMask(editSession);
+                BlockReplace function = new BlockReplace(editSession, pattern);
+                RecursiveVisitor visitor = new RecursiveVisitor(mask, function, range, editSession.getQueue());
+                visitor.visit(origin);
+                Operations.completeLegacy(visitor);
+            } catch (MaxChangedBlocksException e) {
+                player.printError("Max blocks change limit reached.");
+            } finally {
+                session.remember(editSession);
+            }
         }
-        editSession.flushQueue();
-        session.remember(editSession);
         return true;
     }
 
-    private void recurse(EditSession editSession, BlockVector pos, Vector origin, int size, BlockType initialType,
-                         Set<BlockVector> visited) throws WorldEditException {
+    private void recurse(EditSession editSession, BlockVector3 pos, BlockVector3 origin, int size, BlockType initialType,
+            Set<BlockVector3> visited) throws MaxChangedBlocksException {
 
         if (origin.distance(pos) > size || visited.contains(pos)) {
             return;
@@ -92,17 +106,17 @@ public class FloodFillTool implements BlockTool {
             return;
         }
 
-        recurse(editSession, pos.add(1, 0, 0).toBlockVector(),
+        recurse(editSession, pos.add(1, 0, 0),
                 origin, size, initialType, visited);
-        recurse(editSession, pos.add(-1, 0, 0).toBlockVector(),
+        recurse(editSession, pos.add(-1, 0, 0),
                 origin, size, initialType, visited);
-        recurse(editSession, pos.add(0, 0, 1).toBlockVector(),
+        recurse(editSession, pos.add(0, 0, 1),
                 origin, size, initialType, visited);
-        recurse(editSession, pos.add(0, 0, -1).toBlockVector(),
+        recurse(editSession, pos.add(0, 0, -1),
                 origin, size, initialType, visited);
-        recurse(editSession, pos.add(0, 1, 0).toBlockVector(),
+        recurse(editSession, pos.add(0, 1, 0),
                 origin, size, initialType, visited);
-        recurse(editSession, pos.add(0, -1, 0).toBlockVector(),
+        recurse(editSession, pos.add(0, -1, 0),
                 origin, size, initialType, visited);
     }
 

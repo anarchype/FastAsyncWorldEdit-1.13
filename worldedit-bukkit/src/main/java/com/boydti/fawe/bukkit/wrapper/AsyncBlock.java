@@ -9,7 +9,12 @@ import java.util.Collection;
 import java.util.List;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.world.biome.BiomeType;
+import com.sk89q.worldedit.world.block.BlockID;
+import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
+
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
@@ -20,6 +25,9 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.util.BoundingBox;
+import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
 
 public class AsyncBlock implements Block {
 
@@ -58,7 +66,8 @@ public class AsyncBlock implements Block {
     }
 
     public int getTypeId() {
-        return (queue.getCachedCombinedId4Data(x, y, z, BlockTypes.AIR.getInternalId()) & BlockTypes.BIT_MASK);
+        int id = (queue.getCachedCombinedId4Data(x, y, z, BlockTypes.AIR.getInternalId()));
+        return BlockTypes.getFromStateId(id).getInternalId();
     }
 
     @Override
@@ -198,9 +207,10 @@ public class AsyncBlock implements Block {
     @Override
     public BlockFace getFace(Block block) {
         BlockFace[] directions = BlockFace.values();
-        for(int i = 0; i < directions.length; ++i) {
-            BlockFace face = directions[i];
-            if(this.getX() + face.getModX() == block.getX() && this.getY() + face.getModY() == block.getY() && this.getZ() + face.getModZ() == block.getZ()) {
+        for (BlockFace face : directions) {
+            if (this.getX() + face.getModX() == block.getX()
+                && this.getY() + face.getModY() == block.getY()
+                && this.getZ() + face.getModZ() == block.getZ()) {
                 return face;
             }
         }
@@ -210,13 +220,14 @@ public class AsyncBlock implements Block {
     @Override
     public AsyncBlockState getState() {
         int combined = queue.getCombinedId4Data(x, y, z, 0);
-        BlockTypes type = BlockTypes.getFromStateId(combined);
-        switch (type) {
-            case SIGN:
-            case WALL_SIGN:
+        BlockType type = BlockTypes.getFromStateId(combined);
+        switch (type.getInternalId()) {
+            case BlockID.SIGN:
+            case BlockID.WALL_SIGN:
                 return new AsyncSign(this, combined);
+            default:
+                return new AsyncBlockState(this, combined);
         }
-        return new AsyncBlockState(this, combined);
     }
 
     @Override
@@ -226,13 +237,13 @@ public class AsyncBlock implements Block {
 
     @Override
     public Biome getBiome() {
-        return world.getAdapter().getBiome(queue.getBiomeId(x, z));
+        return world.getAdapter().adapt(queue.getBiomeType(x, z));
     }
 
     @Override
     public void setBiome(Biome bio) {
-        int id = world.getAdapter().getBiomeId(bio);
-        queue.setBiome(x, z, FaweCache.getBiome(id));
+        BiomeType biome = world.getAdapter().adapt(bio);
+        queue.setBiome(x, z, biome);
     }
 
     @Override
@@ -267,20 +278,13 @@ public class AsyncBlock implements Block {
 
     @Override
     public boolean isEmpty() {
-        switch (getType()) {
-            case AIR:
-            case CAVE_AIR:
-            case VOID_AIR:
-                return true;
-            default:
-                return false;
-        }
+        return getType().isEmpty();
     }
 
     @Override
     public boolean isLiquid() {
         int combined = queue.getCombinedId4Data(x, y, z, 0);
-        BlockTypes type = BlockTypes.getFromStateId(combined);
+        BlockType type = BlockTypes.getFromStateId(combined);
         return type.getMaterial().isLiquid();
     }
 
@@ -343,4 +347,19 @@ public class AsyncBlock implements Block {
     public void removeMetadata(String metadataKey, Plugin owningPlugin) {
         this.getUnsafeBlock().removeMetadata(metadataKey, owningPlugin);
     }
+
+	@Override
+	public boolean isPassable() {
+		return this.getUnsafeBlock().isPassable();
+	}
+
+	@Override
+	public RayTraceResult rayTrace(Location arg0, Vector arg1, double arg2, FluidCollisionMode arg3) {
+		return this.getUnsafeBlock().rayTrace(arg0, arg1, arg2, arg3);
+	}
+
+	@Override
+	public BoundingBox getBoundingBox() {
+		return this.getUnsafeBlock().getBoundingBox();
+	}
 }

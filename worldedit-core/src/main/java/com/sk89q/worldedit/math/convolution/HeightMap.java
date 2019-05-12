@@ -3,10 +3,11 @@ package com.sk89q.worldedit.math.convolution;
 import com.boydti.fawe.object.visitor.Fast2DIterator;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.MaxChangedBlocksException;
-import com.sk89q.worldedit.MutableBlockVector;
-import com.sk89q.worldedit.Vector;
-import com.sk89q.worldedit.Vector2D;
-import com.sk89q.worldedit.blocks.BaseBlock;
+
+import com.sk89q.worldedit.math.BlockVector2;
+import com.sk89q.worldedit.function.mask.Mask;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.Regions;
@@ -17,6 +18,8 @@ import java.util.Iterator;
 
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
+import javax.annotation.Nullable;
 
 /**
  * Allows applications of Kernels onto the region's height map.
@@ -41,14 +44,14 @@ public class HeightMap {
      * @param region  the region
      */
     public HeightMap(EditSession session, Region region) {
-        this(session, region, false);
+        this(session, region, (Mask) null, false);
     }
 
-    public HeightMap(EditSession session, Region region, boolean naturalOnly) {
-        this(session, region, naturalOnly, false);
+    public HeightMap(EditSession session, Region region, Mask mask) {
+        this(session, region, mask, false);
     }
 
-    public HeightMap(EditSession session, Region region, boolean naturalOnly, boolean layers) {
+    public HeightMap(EditSession session, Region region, Mask mask, boolean layers) {
         checkNotNull(session);
         checkNotNull(region);
 
@@ -69,16 +72,15 @@ public class HeightMap {
         invalid = new boolean[data.length];
 
         if (layers) {
-            Vector min = region.getMinimumPoint();
-            Vector max = region.getMaximumPoint();
+        	BlockVector3 min = region.getMinimumPoint();
+        	BlockVector3 max = region.getMaximumPoint();
             int bx = min.getBlockX();
             int bz = min.getBlockZ();
-            Iterable<Vector2D> flat = Regions.asFlatRegion(region).asFlatRegion();
-            Iterator<Vector2D> iter = new Fast2DIterator(flat, session).iterator();
+            Iterable<BlockVector2> flat = Regions.asFlatRegion(region).asFlatRegion();
+            Iterator<BlockVector2> iter = new Fast2DIterator(flat, session).iterator();
             int layer = 0;
-            MutableBlockVector mutable = new MutableBlockVector();
             while (iter.hasNext()) {
-                Vector2D pos = iter.next();
+                BlockVector2 pos = iter.next();
                 int x = pos.getBlockX();
                 int z = pos.getBlockZ();
                 layer = session.getNearestSurfaceLayer(x, z, (layer + 7) >> 3, 0, maxY);
@@ -87,29 +89,24 @@ public class HeightMap {
         } else {
             // Store current heightmap data
             int index = 0;
-            if (naturalOnly) {
-                for (int z = 0; z < height; ++z) {
-                    for (int x = 0; x < width; ++x, index++) {
-                        data[index] = session.getHighestTerrainBlock(x + minX, z + minZ, minY, maxY);
-                    }
-                }
-            } else {
-                int yTmp = 255;
-                for (int z = 0; z < height; ++z) {
-                    for (int x = 0; x < width; ++x, index++) {
+            int yTmp = 255;
+            for (int z = 0; z < height; ++z) {
+                for (int x = 0; x < width; ++x, index++) {
+                    if (mask != null)
+                        yTmp = session.getNearestSurfaceTerrainBlock(x + minX, z + minZ, yTmp, minY, maxY, Integer.MIN_VALUE, Integer.MAX_VALUE, mask);
+                    else
                         yTmp = session.getNearestSurfaceTerrainBlock(x + minX, z + minZ, yTmp, minY, maxY, Integer.MIN_VALUE, Integer.MAX_VALUE);
-                        switch (yTmp) {
-                            case Integer.MIN_VALUE:
-                                yTmp = minY;
-                                invalid[index] = true;
-                                break;
-                            case Integer.MAX_VALUE:
-                                yTmp = maxY;
-                                invalid[index] = true;
-                                break;
-                        }
-                        data[index] = yTmp;
+                    switch (yTmp) {
+                        case Integer.MIN_VALUE:
+                            yTmp = minY;
+                            invalid[index] = true;
+                            break;
+                        case Integer.MAX_VALUE:
+                            yTmp = maxY;
+                            invalid[index] = true;
+                            break;
                     }
+                    data[index] = yTmp;
                 }
             }
         }
@@ -152,7 +149,7 @@ public class HeightMap {
     public int applyLayers(int[] data) {
         checkNotNull(data);
 
-        Vector minY = region.getMinimumPoint();
+        BlockVector3 minY = region.getMinimumPoint();
         int originX = minY.getBlockX();
         int originY = minY.getBlockY();
         int originZ = minY.getBlockZ();
@@ -230,7 +227,7 @@ public class HeightMap {
     public int apply(int[] data) throws MaxChangedBlocksException {
         checkNotNull(data);
 
-        Vector minY = region.getMinimumPoint();
+        BlockVector3 minY = region.getMinimumPoint();
         int originX = minY.getBlockX();
         int originY = minY.getBlockY();
         int originZ = minY.getBlockZ();
@@ -274,12 +271,12 @@ public class HeightMap {
                 } else if (curHeight > newHeight) {
                     // Set the top block of the column to be the same type
                     // (this could otherwise go wrong with rounding)
-                    session.setBlock(xr, newHeight, zr, session.getBlock(xr, curHeight, zr));
+                    session.setBlock(BlockVector3.at(xr, newHeight, zr), session.getBlock(BlockVector3.at(xr, curHeight, zr)));
                     ++blocksChanged;
 
                     // Fill rest with air
                     for (int y = newHeight + 1; y <= curHeight; ++y) {
-                        session.setBlock(xr, y, zr, fillerAir);
+                        session.setBlock(BlockVector3.at(xr, y, zr), fillerAir);
                         ++blocksChanged;
                     }
                 }

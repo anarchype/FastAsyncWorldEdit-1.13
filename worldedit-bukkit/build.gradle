@@ -4,16 +4,19 @@ apply plugin: 'maven'
 
 repositories {
     maven { url "https://hub.spigotmc.org/nexus/content/groups/public" }
-    maven { url "https://ci.athion.net/job/FAWE-WorldGuard-1.13/lastSuccessfulBuild/artifact/mvn" }
+    maven { url "https://repo.codemc.org/repository/maven-public" }
+    maven { url 'https://papermc.io/repo/repository/maven-public/' }
 }
 
 dependencies {
     compile project(':worldedit-core')
-    compile 'com.sk89q:dummypermscompat:1.8'
-    compile 'com.destroystokyo.paper:paper-api:1.13-R0.1-SNAPSHOT'
+
+    compile 'net.milkbowl.vault:VaultAPI:1.7'
+    compile 'com.sk89q:dummypermscompat:1.10'
+    compile 'com.destroystokyo.paper:paper-api:1.13.2-R0.1-SNAPSHOT'
     compile 'org.spigotmc:spigot:1.13.2-R0.1-SNAPSHOT'
+    compile 'org.slf4j:slf4j-jdk14:1.7.26'
     testCompile 'org.mockito:mockito-core:1.9.0-rc1'
-    compile 'net.milkbowl.vault:VaultAPI:1.5.6'
     compile 'com.massivecraft:factions:2.8.0'
     compile 'com.drtshock:factions:1.6.9.5'
     compile 'com.factionsone:FactionsOne:1.2.2'
@@ -23,22 +26,20 @@ dependencies {
     compile 'net.jzx7:regios:5.9.9'
     compile 'com.bekvon.bukkit.residence:Residence:4.5._13.1'
     compile 'com.palmergames.bukkit:towny:0.84.0.9'
-    compile 'com.worldcretornica:plotme_core:0.16.3'
     compile 'com.thevoxelbox.voxelsniper:voxelsniper:5.171.0'
     compile 'com.comphenix.protocol:ProtocolLib-API:4.4.0-SNAPSHOT'
     compile 'com.wasteofplastic:askyblock:3.0.8.2'
-    compile 'com.sk89q:worldguard-core:latest'
-    compile 'com.sk89q:worldguard-legacy:latest'
+    compileOnly 'com.sk89q.worldguard:worldguard-core:7.0.0-20190215.210421-39'
+    compileOnly 'com.sk89q.worldguard:worldguard-legacy:7.0.0-20190215.210421-39'
 }
 
 processResources {
-    from (sourceSets.main.resources.srcDirs) {
-        expand 'internalVersion': project.internalVersion
+    from('src/main/resources') {
+        expand(
+                name: project.parent.name,
+                version: project.parent.version
+        )
         include 'plugin.yml'
-    }
-
-    from (sourceSets.main.resources.srcDirs) {
-        exclude 'plugin.yml'
     }
 }
 
@@ -79,7 +80,10 @@ task copyFiles {
 
 shadowJar {
     dependencies {
+        relocate "org.slf4j", "com.sk89q.worldedit.slf4j"
         include(dependency(':worldedit-core'))
+        include(dependency('org.slf4j:slf4j-api'))
+        include(dependency("org.slf4j:slf4j-jdk14"))
     }
     archiveName = "${parent.name}-${project.name.replaceAll("worldedit-", "")}-${parent.version}.jar"
     destinationDir = file '../target'

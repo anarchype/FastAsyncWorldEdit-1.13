@@ -20,7 +20,8 @@
 package com.sk89q.worldedit.function.mask;
 
 import com.google.common.base.Function;
-import com.sk89q.worldedit.Vector;
+
+import com.sk89q.worldedit.math.BlockVector3;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -61,7 +62,7 @@ public class MaskIntersection extends AbstractMask {
         if (masks.isEmpty()) {
             masksArray = new Mask[]{Masks.alwaysFalse()};
         } else {
-            masksArray = masks.toArray(new Mask[masks.size()]);
+            masksArray = masks.toArray(new Mask[0]);
         }
     }
 
@@ -166,7 +167,11 @@ public class MaskIntersection extends AbstractMask {
     }
 
     @Override
-    public boolean test(Vector vector) {
+    public boolean test(BlockVector3 vector) {
+        if (masks.isEmpty()) {
+            return false;
+        }
+
         for (Mask mask : masksArray) {
             if (!mask.test(vector)) {
                 return false;
@@ -178,7 +183,7 @@ public class MaskIntersection extends AbstractMask {
     @Nullable
     @Override
     public Mask2D toMask2D() {
-        List<Mask2D> mask2dList = new ArrayList<Mask2D>();
+        List<Mask2D> mask2dList = new ArrayList<>();
         for (Mask mask : masks) {
             Mask2D mask2d = mask.toMask2D();
             if (mask2d != null) {

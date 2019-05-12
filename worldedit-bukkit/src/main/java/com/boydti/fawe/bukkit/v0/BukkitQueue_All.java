@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.world.biome.BiomeType;
+import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import org.bukkit.Chunk;
@@ -153,7 +155,7 @@ public class BukkitQueue_All extends BukkitQueue_0<ChunkSnapshot, ChunkSnapshot,
                                     Object nmsChunk = methodGetHandleChunk.invoke(chunk);
                                     boolean mustSave = saveChunks && (boolean) methodNeedsSaving.invoke(nmsChunk, false);
                                     chunk.unload(mustSave, false);
-                                    if (unloaded == null) unloaded = new ArrayDeque<Chunk>();
+                                    if (unloaded == null) unloaded = new ArrayDeque<>();
                                     unloaded.add(chunk);
                                 }
                             }
@@ -180,19 +182,16 @@ public class BukkitQueue_All extends BukkitQueue_0<ChunkSnapshot, ChunkSnapshot,
 
                         if (load && unloaded != null) {
                             final ArrayDeque<Chunk> finalUnloaded = unloaded;
-                            TaskManager.IMP.async(new Runnable() {
-                                @Override
-                                public void run() {
-                                    for (Chunk chunk : finalUnloaded) {
-                                        int cx = chunk.getX();
-                                        int cz = chunk.getZ();
-                                        if (world.isChunkLoaded(cx, cz)) continue;
-                                        SetQueue.IMP.addTask(() -> {
-                                            world.loadChunk(chunk.getX(), chunk.getZ(), false);
-                                            world.refreshChunk(chunk.getX(), chunk.getZ());
-                                        });
+                            TaskManager.IMP.async(() -> {
+                                for (Chunk chunk : finalUnloaded) {
+                                    int cx = chunk.getX();
+                                    int cz = chunk.getZ();
+                                    if (world.isChunkLoaded(cx, cz)) continue;
+                                    SetQueue.IMP.addTask(() -> {
+                                        world.loadChunk(chunk.getX(), chunk.getZ(), false);
+                                        world.refreshChunk(chunk.getX(), chunk.getZ());
+                                    });
 
-                                    }
                                 }
                             });
                             // load chunks
@@ -205,11 +204,6 @@ public class BukkitQueue_All extends BukkitQueue_0<ChunkSnapshot, ChunkSnapshot,
             }
         });
         return true;
-    }
-
-    @Override
-    public void setHeightMap(FaweChunk chunk, byte[] heightMap) {
-        // Not supported
     }
 
     @Override
@@ -232,9 +226,9 @@ public class BukkitQueue_All extends BukkitQueue_0<ChunkSnapshot, ChunkSnapshot,
     }
 
     @Override
-    public int getBiome(ChunkSnapshot chunkSnapshot, int x, int z) {
+    public BiomeType getBiome(ChunkSnapshot chunkSnapshot, int x, int z) {
         Biome biome = chunkSnapshot.getBiome(x & 15, z & 15);
-        return getAdapter().getBiomeId(biome);
+        return getAdapter().adapt(biome);
     }
 
     @Override
@@ -333,7 +327,7 @@ public class BukkitQueue_All extends BukkitQueue_0<ChunkSnapshot, ChunkSnapshot,
             return null;
         }
         Location loc = new Location(getWorld(), x, y, z);
-        BlockStateHolder block = getAdapter().getBlock(loc);
+        BaseBlock block = getAdapter().getBlock(loc);
         return block.getNbtData();
     }
 
@@ -349,8 +343,6 @@ public class BukkitQueue_All extends BukkitQueue_0<ChunkSnapshot, ChunkSnapshot,
         }
         return super.supports(capability);
     }
-
-    private int skip;
 
     @Override
     public void startSet(boolean parallel) {

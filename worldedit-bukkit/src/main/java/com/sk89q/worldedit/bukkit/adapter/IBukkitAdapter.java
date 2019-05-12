@@ -1,12 +1,15 @@
 package com.sk89q.worldedit.bukkit.adapter;
 
 import com.sk89q.worldedit.NotABlockException;
-import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.blocks.BaseItemStack;
 import com.sk89q.worldedit.bukkit.*;
 import com.sk89q.worldedit.entity.Entity;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.math.Vector3;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.world.World;
+import com.sk89q.worldedit.world.biome.BiomeType;
+import com.sk89q.worldedit.world.biome.BiomeTypes;
 import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
 import com.sk89q.worldedit.world.block.BlockType;
@@ -18,6 +21,7 @@ import com.sk89q.worldedit.world.gamemode.GameModes;
 import com.sk89q.worldedit.world.item.ItemType;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -96,7 +100,7 @@ public interface IBukkitAdapter {
      */
     default Location adapt(org.bukkit.Location location) {
         checkNotNull(location);
-        Vector position = asVector(location);
+        Vector3 position = asVector(location);
         return new com.sk89q.worldedit.util.Location(
                 adapt(location.getWorld()),
                 position,
@@ -112,7 +116,7 @@ public interface IBukkitAdapter {
      */
     default org.bukkit.Location adapt(Location location) {
         checkNotNull(location);
-        Vector position = location.toVector();
+        Vector3 position = location;
         return new org.bukkit.Location(
                 adapt((World) location.getExtent()),
                 position.getX(), position.getY(), position.getZ(),
@@ -127,12 +131,16 @@ public interface IBukkitAdapter {
      * @param position the WorldEdit position
      * @return a Bukkit location
      */
-    default org.bukkit.Location adapt(org.bukkit.World world, Vector position) {
+    default org.bukkit.Location adapt(org.bukkit.World world, Vector3 position) {
         checkNotNull(world);
         checkNotNull(position);
         return new org.bukkit.Location(
                 world,
                 position.getX(), position.getY(), position.getZ());
+    }
+    
+    default org.bukkit.Location adapt(org.bukkit.World world, BlockVector3 position){
+    	return adapt(world, position.toVector3());
     }
 
     /**
@@ -158,9 +166,20 @@ public interface IBukkitAdapter {
      * @param location The Bukkit location
      * @return a WorldEdit vector
      */
-    default Vector asVector(org.bukkit.Location location) {
+    default Vector3 asVector(org.bukkit.Location location) {
         checkNotNull(location);
-        return new Vector(location.getX(), location.getY(), location.getZ());
+        return Vector3.at(location.getX(), location.getY(), location.getZ());
+    }
+    
+    /**
+     * Create a WorldEdit BlockVector from a Bukkit location.
+     *
+     * @param location The Bukkit location
+     * @return a WorldEdit vector
+     */
+    default BlockVector3 asBlockVector(org.bukkit.Location location) {
+        checkNotNull(location);
+        return BlockVector3.at(location.getX(), location.getY(), location.getZ());
     }
 
     /**
@@ -268,7 +287,7 @@ public interface IBukkitAdapter {
      */
     BlockState adapt(BlockData blockData);
 
-    BlockTypes adapt(Material material);
+    BlockType adapt(Material material);
 
     /**
      * Create a Bukkit BlockData from a WorldEdit BlockStateHolder
@@ -337,5 +356,20 @@ public interface IBukkitAdapter {
      */
     default Player adapt(com.sk89q.worldedit.entity.Player player) {
         return ((BukkitPlayer) player).getPlayer();
+    }
+
+    default Biome adapt(BiomeType biomeType) {
+        if (!biomeType.getId().startsWith("minecraft:")) {
+            throw new IllegalArgumentException("Bukkit only supports vanilla biomes");
+        }
+        try {
+            return Biome.valueOf(biomeType.getId().substring(10).toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    default BiomeType adapt(Biome biome) {
+        return BiomeTypes.get(biome.name().toLowerCase());
     }
 }

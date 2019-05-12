@@ -20,11 +20,12 @@
 package com.sk89q.worldedit.function.generator;
 
 import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.function.RegionFunction;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.util.TreeGenerator;
-import com.sk89q.worldedit.world.block.BlockStateHolder;
+import com.sk89q.worldedit.world.block.BlockID;
+import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockType;
 import com.sk89q.worldedit.world.block.BlockTypes;
 
@@ -49,22 +50,29 @@ public class ForestGenerator implements RegionFunction {
     }
 
     @Override
-    public boolean apply(Vector position) throws WorldEditException {
-        BlockStateHolder block = editSession.getBlock(position);
+    public boolean apply(BlockVector3 position) throws WorldEditException {
+        BlockState block = editSession.getBlock(position);
         BlockType t = block.getBlockType();
-
-        if (t == BlockTypes.GRASS_BLOCK || t == BlockTypes.DIRT) {
-            treeType.generate(editSession, position.add(0, 1, 0));
-            return true;
-        } else if (t == BlockTypes.TALL_GRASS || t == BlockTypes.DEAD_BUSH || t == BlockTypes.POPPY || t == BlockTypes.DANDELION) { // TODO: This list needs to be moved
-            editSession.setBlock(position, BlockTypes.AIR.getDefaultState());
-            treeType.generate(editSession, position);
-            return true;
-        } else if (t == BlockTypes.SNOW) {
-            editSession.setBlock(position, BlockTypes.AIR.getDefaultState());
-            return false;
-        } else { // Trees won't grow on this!
-            return false;
+        switch (t.getInternalId()) {
+            case BlockID.GRASS_BLOCK:
+            case BlockID.DIRT:
+                treeType.generate(editSession, position.add(0, 1, 0));
+                return true;
+            case BlockID.TALL_GRASS:  // TODO: This list needs to be moved
+            case BlockID.DEAD_BUSH:
+            case BlockID.POPPY:
+            case BlockID.DANDELION:
+                editSession.setBlock(position, BlockTypes.AIR.getDefaultState());
+                // and then trick the generator here by directly setting into the world
+                editSession.getWorld().setBlock(position, BlockTypes.AIR.getDefaultState());
+                // so that now the generator can generate the tree
+                boolean success = treeType.generate(editSession, position);
+                if (!success) {
+                    editSession.setBlock(position, block); // restore on failure
+                }
+                return success;
+            default: // Trees won't grow on this!
+                return false;
         }
     }
 }

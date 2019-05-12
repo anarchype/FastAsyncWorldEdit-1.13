@@ -20,11 +20,12 @@
 package com.sk89q.worldedit.sponge.adapter;
 
 import com.flowpowered.math.vector.Vector3d;
-import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.blocks.BaseItemStack;
 import com.sk89q.worldedit.entity.BaseEntity;
+import com.sk89q.worldedit.math.Vector3;
 import com.sk89q.worldedit.sponge.SpongeWorld;
 import com.sk89q.worldedit.util.Location;
+
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.world.World;
@@ -34,16 +35,6 @@ import org.spongepowered.api.world.biome.BiomeType;
  * An interface for various things that can't be done through the Sponge API.
  */
 public interface SpongeImplAdapter {
-
-    /**
-     * Resolves the numerical ID from this {@link BiomeType}
-     *
-     * @param type The biometype
-     * @return The numerical ID
-     */
-    int resolve(BiomeType type);
-
-    BiomeType resolveBiome(int intID);
 
     BaseEntity createBaseEntity(Entity entity);
 
@@ -56,7 +47,7 @@ public interface SpongeImplAdapter {
     }
 
     default Location adapt(org.spongepowered.api.world.Location<org.spongepowered.api.world.World> loc, Vector3d rot) {
-        Vector position = new Vector(loc.getX(), loc.getY(), loc.getZ());
+        Vector3 position = Vector3.at(loc.getX(), loc.getY(), loc.getZ());
 
         return new Location(getWorld(loc.getExtent()), position, (float) rot.getY(), (float) rot.getX());
     }

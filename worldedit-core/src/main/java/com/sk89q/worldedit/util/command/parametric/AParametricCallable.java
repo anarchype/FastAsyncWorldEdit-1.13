@@ -2,9 +2,7 @@ package com.sk89q.worldedit.util.command.parametric;
 
 import com.boydti.fawe.command.SuggestInputParseException;
 import com.boydti.fawe.config.BBC;
-import com.boydti.fawe.util.chat.UsageMessage;
 import com.sk89q.minecraft.util.commands.*;
-import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.util.command.*;
 
 import java.lang.reflect.InvocationTargetException;
@@ -171,7 +169,7 @@ public abstract class AParametricCallable implements CommandCallable {
 
                 if (!found) {
                     if (unusedFlags == null) {
-                        unusedFlags = new HashSet<Character>();
+                        unusedFlags = new HashSet<>();
                     }
                     unusedFlags.add(flag);
                 }
@@ -230,20 +228,23 @@ public abstract class AParametricCallable implements CommandCallable {
             for (;maxConsumedI < parameters.length; maxConsumedI++) {
                 parameter = parameters[maxConsumedI];
                 if (parameter.getBinding().getBehavior(parameter) != BindingBehavior.PROVIDES) {
-                    // Parse the user input into a method argument
-                    ArgumentStack usedArguments = getScopedContext(parameter, scoped);
+                    if (mayConsumeArguments(maxConsumedI, scoped)) {
+                        // Parse the user input into a method argument
+                        ArgumentStack usedArguments = getScopedContext(parameter, scoped);
 
-                    usedArguments.mark();
-                    try {
-                        parameter.getBinding().bind(parameter, usedArguments, false);
-                        minConsumedI = maxConsumedI + 1;
-                    } catch (Throwable e) {
-                        while (e.getCause() != null && !(e instanceof ParameterException || e instanceof InvocationTargetException)) e = e.getCause();
-                        consumed = usedArguments.reset();
-                        // Not optional? Then we can't execute this command
-                        if (!parameter.isOptional()) {
-                            if (!(e instanceof MissingParameterException)) minConsumedI = maxConsumedI;
-                            throw e;
+                        usedArguments.mark();
+                        try {
+                            parameter.getBinding().bind(parameter, usedArguments, false);
+                            minConsumedI = maxConsumedI + 1;
+                        } catch (Throwable e) {
+                            while (e.getCause() != null && !(e instanceof ParameterException || e instanceof InvocationTargetException))
+                                e = e.getCause();
+                            consumed = usedArguments.reset();
+                            // Not optional? Then we can't execute this command
+                            if (!parameter.isOptional()) {
+                                if (!(e instanceof MissingParameterException)) minConsumedI = maxConsumedI;
+                                throw e;
+                            }
                         }
                     }
                 }

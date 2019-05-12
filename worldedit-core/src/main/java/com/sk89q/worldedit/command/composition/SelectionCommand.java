@@ -36,7 +36,7 @@ import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.IncompleteRegionException;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.WorldEdit;
-import com.sk89q.worldedit.blocks.BaseBlock;
+
 import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.extension.platform.Actor;
@@ -81,20 +81,26 @@ public class SelectionCommand extends SimpleCommand<Operation> {
         if (!testPermission(locals)) {
             throw new CommandPermissionsException();
         }
+
         Contextual<? extends Operation> operationFactory = delegate.call(args, locals);
+
         Actor actor = locals.get(Actor.class);
         if (actor instanceof Player) {
             try {
                 Player player = (Player) actor;
                 LocalSession session = WorldEdit.getInstance().getSessionManager().get(player);
                 Region selection = session.getSelection(player.getWorld());
+
                 EditSession editSession = session.createEditSession(player);
-                editSession.enableQueue();
+                editSession.enableStandardMode();
                 locals.put(EditSession.class, editSession);
                 session.tellVersion(player);
+
                 EditContext editContext = new EditContext();
                 editContext.setDestination(locals.get(EditSession.class));
                 editContext.setRegion(selection);
+                editContext.setSession(session);
+
                 Operation operation = operationFactory.createFromContext(editContext);
                 // Shortcut
                 if (selection instanceof CuboidRegion && editSession.hasFastMode() && operation instanceof RegionVisitor) {

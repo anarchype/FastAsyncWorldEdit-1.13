@@ -19,22 +19,28 @@
 
 package com.sk89q.worldedit.world.registry;
 
-import com.sk89q.worldedit.blocks.BlockMaterial;
 import com.sk89q.worldedit.registry.state.Property;
 import com.sk89q.worldedit.world.block.BlockState;
 import com.sk89q.worldedit.world.block.BlockType;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-
-import javax.annotation.Nullable;
 
 /**
  * Provides information on blocks and provides methods to create them.
  */
 public interface BlockRegistry {
+
+    /**
+     * Gets the name for the given block.
+     *
+     * @param blockType the block
+     * @return The name, or null if it's unknown
+     */
+    @Nullable
+    String getName(BlockType blockType);
 
     /**
      * Get the material for the given block.
@@ -56,8 +62,7 @@ public interface BlockRegistry {
      * @param blockType the block
      * @return a map of states where the key is the state's ID
      */
-    Map<String, ? extends Property> getProperties(BlockType blockType);
-
+    Map<String, ? extends Property<?>> getProperties(BlockType blockType);
 
     /**
      * Register all blocks

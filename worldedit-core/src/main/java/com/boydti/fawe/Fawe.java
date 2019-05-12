@@ -10,7 +10,6 @@ import com.boydti.fawe.util.*;
 import com.boydti.fawe.util.chat.ChatManager;
 import com.boydti.fawe.util.chat.PlainChatManager;
 import com.boydti.fawe.util.cui.CUI;
-import com.boydti.fawe.util.metrics.BStats;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.extension.factory.DefaultTransformParser;
 import com.sk89q.worldedit.extension.platform.Actor;
@@ -18,13 +17,8 @@ import com.sk89q.worldedit.session.request.Request;
 
 import javax.annotation.Nullable;
 import javax.management.InstanceAlreadyExistsException;
-import javax.management.Notification;
 import javax.management.NotificationEmitter;
-import javax.management.NotificationListener;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryPoolMXBean;
@@ -84,12 +78,9 @@ public class Fawe {
     private final FaweTimer timer;
     private FaweVersion version;
     private VisualQueue visualQueue;
-    private Updater updater;
     private TextureUtil textures;
     private DefaultTransformParser transformParser;
     private ChatManager chatManager = new PlainChatManager();
-
-    private BStats stats;
 
     /**
      * Get the implementation specific class
@@ -152,10 +143,10 @@ public class Fawe {
      * The platform specific implementation
      */
     private final IFawe IMP;
-    private Thread thread = Thread.currentThread();
+    private Thread thread;
 
     private Fawe(final IFawe implementation) {
-        this.INSTANCE = this;
+        INSTANCE = this;
         this.IMP = implementation;
         this.thread = Thread.currentThread();
         /*
@@ -164,28 +155,11 @@ public class Fawe {
         this.setupConfigs();
         TaskManager.IMP = this.IMP.getTaskManager();
 
-        TaskManager.IMP.async(new Runnable() {
-            @Override
-            public void run() {
-                MainUtil.deleteOlder(MainUtil.getFile(IMP.getDirectory(), Settings.IMP.PATHS.HISTORY), TimeUnit.DAYS.toMillis(Settings.IMP.HISTORY.DELETE_AFTER_DAYS), false);
-                MainUtil.deleteOlder(MainUtil.getFile(IMP.getDirectory(), Settings.IMP.PATHS.CLIPBOARD), TimeUnit.DAYS.toMillis(Settings.IMP.CLIPBOARD.DELETE_AFTER_DAYS), false);
-            }
+        TaskManager.IMP.async(() -> {
+            MainUtil.deleteOlder(MainUtil.getFile(IMP.getDirectory(), Settings.IMP.PATHS.HISTORY), TimeUnit.DAYS.toMillis(Settings.IMP.HISTORY.DELETE_AFTER_DAYS), false);
+            MainUtil.deleteOlder(MainUtil.getFile(IMP.getDirectory(), Settings.IMP.PATHS.CLIPBOARD), TimeUnit.DAYS.toMillis(Settings.IMP.CLIPBOARD.DELETE_AFTER_DAYS), false);
         });
 
-        if (Settings.IMP.METRICS) {
-            try {
-                this.stats = new BStats();
-                this.IMP.startMetrics();
-                TaskManager.IMP.later(new Runnable() {
-                    @Override
-                    public void run() {
-                        stats.start();
-                    }
-                }, 1);
-            } catch (Throwable ignore) {
-                ignore.printStackTrace();
-            }
-        }
         /*
          * Instance independent stuff
          */
@@ -216,31 +190,13 @@ public class Fawe {
                 WEManager.IMP.managers.addAll(Fawe.this.IMP.getMaskManagers());
                 WEManager.IMP.managers.add(new PlotSquaredFeature());
                 Fawe.debug("Plugin 'PlotSquared' found. Using it now.");
-            } catch (Throwable e) {}
+            } catch (Throwable ignored) {}
         }, 0);
 
         TaskManager.IMP.repeat(timer, 1);
-
-        if (!Settings.IMP.UPDATE.equalsIgnoreCase("false")) {
-            // Delayed updating
-            updater = new Updater();
-            TaskManager.IMP.async(() -> update());
-            TaskManager.IMP.repeatAsync(() -> update(), 36000);
-        }
     }
 
     public void onDisable() {
-        if (stats != null) {
-            stats.close();
-        }
-    }
-
-    private boolean update() {
-        if (updater != null) {
-            updater.getUpdate(IMP.getPlatform(), getVersion());
-            return true;
-        }
-        return false;
     }
 
     public CUI getCUI(Actor actor) {
@@ -278,16 +234,6 @@ public class Fawe {
 
     public DefaultTransformParser getTransformParser() {
         return transformParser;
-    }
-
-    /**
-     * The FAWE updater class
-     * - Use to get basic update information (changelog/version etc)
-     *
-     * @return
-     */
-    public Updater getUpdater() {
-        return updater;
     }
 
     public TextureUtil getCachedTextureUtil(boolean randomize, int min, int max) {
@@ -367,15 +313,17 @@ public class Fawe {
         // Setting up config.yml
         File file = new File(this.IMP.getDirectory(), "config.yml");
         Settings.IMP.PLATFORM = IMP.getPlatform().replace("\"", "");
-        try {
-            InputStream stream = getClass().getResourceAsStream("/fawe.properties");
-            java.util.Scanner scanner = new java.util.Scanner(stream).useDelimiter("\\A");
-            String versionString = scanner.next().trim();
-            scanner.close();
-            this.version = new FaweVersion(versionString);
+        try (InputStream stream = getClass().getResourceAsStream("/fawe.properties");
+             BufferedReader br = new BufferedReader(new InputStreamReader(stream))) {
+          //  java.util.Scanner scanner = new java.util.Scanner(stream).useDelimiter("\\A");
+            String versionString = br.readLine();
+            String commitString = br.readLine();
+            String dateString = br.readLine();
+           // scanner.close();
+            this.version = FaweVersion.tryParse(versionString, commitString, dateString);
             Settings.IMP.DATE = new Date(100 + version.year, version.month, version.day).toGMTString();
-            Settings.IMP.BUILD = "https://ci.athion.net/job/FastAsyncWorldEdit/" + version.build;
-            Settings.IMP.COMMIT = "https://github.com/boy0001/FastAsyncWorldedit/commit/" + Integer.toHexString(version.hash);
+            Settings.IMP.BUILD = "https://ci.athion.net/job/FastAsyncWorldEdit-Breaking/" + version.build;
+            Settings.IMP.COMMIT = "https://github.com/IntellectualSites/FastAsyncWorldEdit-1.13/commit/" + Integer.toHexString(version.hash);
         } catch (Throwable ignore) {}
         try {
             Settings.IMP.reload(file);
@@ -452,16 +400,13 @@ public class Fawe {
             final MemoryMXBean memBean = ManagementFactory.getMemoryMXBean();
             final NotificationEmitter ne = (NotificationEmitter) memBean;
 
-            ne.addNotificationListener(new NotificationListener() {
-                @Override
-                public void handleNotification(final Notification notification, final Object handback) {
-                    final long heapSize = Runtime.getRuntime().totalMemory();
-                    final long heapMaxSize = Runtime.getRuntime().maxMemory();
-                    if (heapSize < heapMaxSize) {
-                        return;
-                    }
-                    MemUtil.memoryLimitedTask();
+            ne.addNotificationListener((notification, handback) -> {
+                final long heapSize = Runtime.getRuntime().totalMemory();
+                final long heapMaxSize = Runtime.getRuntime().maxMemory();
+                if (heapSize < heapMaxSize) {
+                    return;
                 }
+                MemUtil.memoryLimitedTask();
             }, null, null);
 
             final List<MemoryPoolMXBean> memPools = ManagementFactory.getMemoryPoolMXBeans();

@@ -20,6 +20,7 @@
 package com.sk89q.worldedit.util.command.parametric;
 
 import com.boydti.fawe.command.SuggestInputParseException;
+import com.boydti.fawe.config.BBC;
 import com.google.common.primitives.Chars;
 import com.sk89q.minecraft.util.commands.Command;
 import com.sk89q.minecraft.util.commands.CommandContext;
@@ -55,9 +56,9 @@ public class ParametricCallable extends AParametricCallable {
     private final Object object;
     private final Method method;
     private final ParameterData[] parameters;
-    private final Set<Character> valueFlags = new HashSet<Character>();
+    private final Set<Character> valueFlags = new HashSet<>();
     private final boolean anyFlags;
-    private final Set<Character> legacyFlags = new HashSet<Character>();
+    private final Set<Character> legacyFlags = new HashSet<>();
     private final SimpleDescription description = new SimpleDescription();
     private final CommandPermissions commandPermissions;
     private final Command definition;
@@ -81,7 +82,7 @@ public class ParametricCallable extends AParametricCallable {
         Type[] types = method.getGenericParameterTypes();
 
         parameters = new ParameterData[types.length];
-        List<Parameter> userParameters = new ArrayList<Parameter>();
+        List<Parameter> userParameters = new ArrayList<>();
 
         // This helps keep tracks of @Nullables that appear in the middle of a list
         // of parameters
@@ -113,7 +114,7 @@ public class ParametricCallable extends AParametricCallable {
                     }
                     // Special annotation bindings
                 } else if (parameter.getBinding() == null) {
-                    parameter.setBinding(builder.getBindings().get(annotation.annotationType()));
+                    parameter.setBinding(builder.getBindings());
                     parameter.setClassifier(annotation);
                 }
             }
@@ -127,7 +128,7 @@ public class ParametricCallable extends AParametricCallable {
 
             // No special @annotation binding... let's check for the type
             if (parameter.getBinding() == null) {
-                parameter.setBinding(builder.getBindings().get(type));
+                parameter.setBinding(builder.getBindings());
 
                 // Don't know how to parse for this type of value
                 if (parameter.getBinding() == null) {
@@ -221,7 +222,7 @@ public class ParametricCallable extends AParametricCallable {
 
         try {
             // preProcess handlers
-            List<InvokeHandler> handlers = new ArrayList<InvokeHandler>();
+            List<InvokeHandler> handlers = new ArrayList<>();
             for (InvokeListener listener : builder.getInvokeListeners()) {
                 InvokeHandler handler = listener.createInvokeHandler();
                 handlers.add(handler);
@@ -270,9 +271,9 @@ public class ParametricCallable extends AParametricCallable {
             }
             return result;
         } catch (MissingParameterException e) {
-            throw new InvalidUsageException("Too few parameters!", this, true);
+            throw new InvalidUsageException(BBC.getPrefix() + "Too few parameters!", this, true);
         } catch (UnconsumedParameterException e) {
-            throw new InvalidUsageException("Too many parameters! Unused parameters: " + e.getUnconsumed(), this, true);
+            throw new InvalidUsageException(BBC.getPrefix() + "Too many parameters! Unused parameters: " + e.getUnconsumed(), this, true);
         } catch (ParameterException e) {
             assert parameter != null;
             String name = parameter.getName();

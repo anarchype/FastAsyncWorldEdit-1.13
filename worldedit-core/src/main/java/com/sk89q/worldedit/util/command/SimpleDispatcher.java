@@ -20,6 +20,7 @@
 package com.sk89q.worldedit.util.command;
 
 import com.boydti.fawe.Fawe;
+import com.boydti.fawe.config.BBC;
 import com.boydti.fawe.util.StringMan;
 import com.google.common.base.Joiner;
 import com.sk89q.minecraft.util.commands.CommandException;
@@ -40,7 +41,7 @@ import java.util.Set;
  */
 public class SimpleDispatcher implements Dispatcher {
 
-    private final Map<String, CommandMapping> commands = new HashMap<String, CommandMapping>();
+    private final Map<String, CommandMapping> commands = new HashMap<>();
     private final SimpleDescription description = new SimpleDescription();
 
     /**
@@ -82,7 +83,7 @@ public class SimpleDispatcher implements Dispatcher {
 
     @Override
     public Set<CommandMapping> getCommands() {
-        return Collections.unmodifiableSet(new HashSet<CommandMapping>(commands.values()));
+        return Collections.unmodifiableSet(new HashSet<>(commands.values()));
     }
 
     @Override
@@ -92,7 +93,7 @@ public class SimpleDispatcher implements Dispatcher {
 
     @Override
     public Set<String> getPrimaryAliases() {
-        Set<String> aliases = new HashSet<String>();
+        Set<String> aliases = new HashSet<>();
         for (CommandMapping mapping : getCommands()) {
             aliases.add(mapping.getPrimaryAlias());
         }
@@ -141,7 +142,7 @@ public class SimpleDispatcher implements Dispatcher {
 
         }
 
-        throw new InvalidUsageException("Please choose a sub-command.", this, true);
+        throw new InvalidUsageException(BBC.getPrefix() + "Please choose a sub-command.", this, true);
     }
 
     @Override
@@ -151,7 +152,7 @@ public class SimpleDispatcher implements Dispatcher {
         if (split.length <= 1) {
             String prefix = split.length > 0 ? split[0] : "";
 
-            List<String> suggestions = new ArrayList<String>();
+            List<String> suggestions = new ArrayList<>();
 
             for (CommandMapping mapping : getCommands()) {
                 if (mapping.getCallable().testPermission(locals)) {

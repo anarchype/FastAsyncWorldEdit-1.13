@@ -8,13 +8,15 @@ import com.boydti.fawe.object.FaweQueue;
 import com.boydti.fawe.util.MainUtil;
 import com.boydti.fawe.util.MathMan;
 import com.boydti.fawe.util.SetQueue;
-import com.intellectualcrafters.plot.PS;
-import com.intellectualcrafters.plot.object.ChunkLoc;
-import com.intellectualcrafters.plot.object.Location;
-import com.intellectualcrafters.plot.object.Plot;
-import com.intellectualcrafters.plot.object.PlotArea;
-import com.intellectualcrafters.plot.object.PlotPlayer;
-import com.intellectualcrafters.plot.util.expiry.ExpireManager;
+import com.github.intellectualsites.plotsquared.plot.PlotSquared;
+import com.github.intellectualsites.plotsquared.plot.object.ChunkLoc;
+import com.github.intellectualsites.plotsquared.plot.object.Location;
+import com.github.intellectualsites.plotsquared.plot.object.Plot;
+import com.github.intellectualsites.plotsquared.plot.object.PlotArea;
+import com.github.intellectualsites.plotsquared.plot.object.PlotPlayer;
+import com.github.intellectualsites.plotsquared.plot.util.expiry.ExpireManager;
+import com.sk89q.worldedit.world.block.BlockTypes;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +36,7 @@ public class PlotTrim {
     private final MCAQueue originalQueue;
     private final File root;
     private final File originalRoot;
-    private byte[][] ids;
+    private int[][] ids;
     private boolean deleteUnowned = true;
 
     public PlotTrim(PlotPlayer player, PlotArea area, String worldName, boolean deleteUnowned) {
@@ -49,7 +51,7 @@ public class PlotTrim {
         this.deleteUnowned = deleteUnowned;
     }
 
-    public void setChunk(byte[][] ids) {
+    public void setChunk(int[][] ids) {
         checkNotNull(ids);
         this.ids = ids;
     }
@@ -87,7 +89,7 @@ public class PlotTrim {
                 }
             });
             ArrayList<Plot> plots = new ArrayList<>();
-            plots.addAll(PS.get().getPlots(area));
+            plots.addAll(PlotSquared.get().getPlots(area));
             if (ExpireManager.IMP != null) {
                 plots.removeAll(ExpireManager.IMP.getPendingExpired());
             }
@@ -182,7 +184,7 @@ public class PlotTrim {
 
     private int count = 0;
 
-    private boolean isEqual(byte[] a, byte[] b) {
+    private boolean isEqual(int[] a, int[] b) {
         if (a == b) {
             return true;
         }
@@ -195,9 +197,9 @@ public class PlotTrim {
         return isEmpty(b);
     }
 
-    private boolean isEmpty(byte[] a) {
-        for (byte b : a) {
-            if (b != 0) {
+    private boolean isEmpty(int[] a) {
+        for (int b : a) {
+            if (!BlockTypes.getFromStateId(b).getMaterial().isAir()) {
                 return false;
             }
         }

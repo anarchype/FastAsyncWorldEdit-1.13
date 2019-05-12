@@ -19,23 +19,26 @@
 
 package com.sk89q.worldedit.util.report;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ShallowObjectReport extends DataReport {
 
-    private static final Logger log = Logger.getLogger(ShallowObjectReport.class.getCanonicalName());
+    private static final Logger log = LoggerFactory.getLogger(ShallowObjectReport.class);
 
     public ShallowObjectReport(String title, Object object) {
         super(title);
         checkNotNull(object, "object");
 
-        Class<?> type = object.getClass();
+        scanClass(object, object.getClass());
+    }
 
+    void scanClass(Object object, Class<?> type) {
         for (Field field : type.getDeclaredFields()) {
             if (Modifier.isStatic(field.getModifiers())) {
                 continue;
@@ -50,9 +53,8 @@ public class ShallowObjectReport extends DataReport {
                 Object value = field.get(object);
                 append(field.getName(), String.valueOf(value));
             } catch (IllegalAccessException e) {
-                log.log(Level.WARNING, "Failed to get value of '" + field.getName() + "' on " + type);
+                log.warn("Failed to get value of '" + field.getName() + "' on " + type);
             }
         }
     }
-
 }
